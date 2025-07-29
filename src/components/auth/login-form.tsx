@@ -78,9 +78,6 @@ export function LoginForm() {
 
         // Check if user already exists in store
         const existingUser = users.find(u => u.id === user.id);
-        console.log("Login - user to add:", user);
-        console.log("Login - existing users:", users);
-        console.log("Login - existing user found:", existingUser);
         
         if (!existingUser) {
           // Add user to store if not exists, but preserve the Supabase ID
@@ -88,9 +85,6 @@ export function LoginForm() {
           useAppStore.setState({
             users: [...users, user]
           });
-          console.log("Login - user added to store");
-        } else {
-          console.log("Login - user already exists in store");
         }
 
         // Set current user in app state

@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Edit, Trash } from "lucide-react";
 import { TaskTimer } from "@/components/tasks/task-timer";
 import { TimeTrackingHistory } from "@/components/tasks/time-tracking-history";
+import { TaskExport } from "@/components/tasks/task-export";
 
 export default function TaskDetail() {
   const navigate = useNavigate();
@@ -190,6 +191,9 @@ export default function TaskDetail() {
                 </div>
               </div>
             )}
+            
+            {/* Export Component */}
+            <TaskExport task={task} users={users} />
             
             {/* Time Tracking History Component */}
             {task.timeTracking && task.timeTracking.length > 0 && (

@@ -11,8 +11,6 @@ interface TimeTrackingHistoryProps {
 export function TimeTrackingHistory({ records = [] }: TimeTrackingHistoryProps) {
   const { users } = useAppStore();
   
-  console.log("TimeTrackingHistory - component rendered with users:", users.map(u => ({ id: u.id, name: u.name })));
-  
   if (records.length === 0) {
     return null;
   }
@@ -32,9 +30,6 @@ export function TimeTrackingHistory({ records = [] }: TimeTrackingHistoryProps) 
           <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
             {records.map((record) => {
               const user = users.find(u => u.id === record.userId);
-              console.log("TimeTrackingHistory - record.userId:", record.userId);
-              console.log("TimeTrackingHistory - available users:", users.map(u => ({ id: u.id, name: u.name })));
-              console.log("TimeTrackingHistory - found user:", user);
               return (
                 <div key={record.id} className="border-b pb-2 last:border-0">
                   <div className="flex justify-between items-start">
