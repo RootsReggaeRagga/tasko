@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate, getInitials } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Edit, UserPlus } from "lucide-react";
+import { ArrowLeft, Edit, UserPlus, Trash2 } from "lucide-react";
+import { MemberManagement } from "@/components/teams/member-management";
 
 export default function TeamDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { teams, projects } = useAppStore();
+  const { teams, projects, removeMemberFromTeam, deleteTeam } = useAppStore();
   
   const team = teams.find((t) => t.id === id);
   
@@ -72,6 +73,26 @@ export default function TeamDetail() {
             <UserPlus className="h-4 w-4" />
             <span>Invite Member</span>
           </Button>
+          <Button 
+            size="sm"
+            variant="destructive"
+            className="gap-1"
+            onClick={() => {
+              const teamProjects = projects.filter(p => p.teamId === team.id);
+              if (teamProjects.length > 0) {
+                alert(`Cannot delete team. This team has ${teamProjects.length} project(s). Please delete or reassign projects first.`);
+                return;
+              }
+              
+              if (confirm(`Are you sure you want to delete the team "${team.name}"? This action cannot be undone.`)) {
+                deleteTeam(team.id);
+                navigate('/teams');
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Delete Team</span>
+          </Button>
         </div>
       </div>
       
@@ -94,28 +115,7 @@ export default function TeamDetail() {
             </p>
           </div>
 
-          <div>
-            <h3 className="font-medium mb-4">Team Members ({team.members.length})</h3>
-            <div className="space-y-2">
-              {team.members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between border-b py-2 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={member.avatar} alt={member.name} />
-                      <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{member.name}</div>
-                      <div className="text-sm text-muted-foreground">{member.email}</div>
-                    </div>
-                  </div>
-                  <Badge variant={member.role === 'admin' ? "default" : "outline"}>
-                    {member.role}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
+          <MemberManagement teamId={team.id} members={team.members} />
 
           <div>
             <div className="flex items-center justify-between mb-4">
