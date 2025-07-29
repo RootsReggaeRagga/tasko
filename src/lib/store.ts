@@ -127,7 +127,7 @@ export const useAppStore = create<State & Actions>()(
       deleteProject: (id) =>
         set((state) => ({
           projects: state.projects.filter((p) => p.id !== id),
-          tasks: state.tasks.filter((t) => state.projects.find(p => p.id === id)?.tasks.find(pt => pt.id === t.id) === undefined)
+          tasks: state.tasks.filter((t) => !state.projects.find(p => p.id === id)?.tasks.includes(t.id))
         })),
 
       // Task actions
@@ -141,7 +141,6 @@ export const useAppStore = create<State & Actions>()(
         
         set((state) => ({
           tasks: [...state.tasks, newTask],
-          // Don't store full task objects in projects to avoid rendering issues
           projects: state.projects.map(project => 
             project.id === task.projectId 
               ? { ...project, tasks: [...(project.tasks || []), newTask.id] }
@@ -149,19 +148,28 @@ export const useAppStore = create<State & Actions>()(
           )
         }));
       },
-      updateTask: (id, task) =>
-        set((state) => ({
-          tasks: state.tasks.map((t) => 
+      updateTask: (id, task) => {
+        console.log("updateTask called:", { id, task });
+        set((state) => {
+          const updatedTasks = state.tasks.map((t) => 
             t.id === id 
               ? { ...t, ...task, updatedAt: new Date().toISOString() } 
               : t
-          ),
-          // Only keep task IDs in the projects array
-          projects: state.projects.map(project => ({
-            ...project,
-            tasks: Array.isArray(project.tasks) ? project.tasks : []
-          }))
-        })),
+          );
+          
+          const updatedTask = updatedTasks.find(t => t.id === id);
+          console.log("Updated task:", updatedTask);
+          
+          return {
+            tasks: updatedTasks,
+            // Only keep task IDs in the projects array
+            projects: state.projects.map(project => ({
+              ...project,
+              tasks: Array.isArray(project.tasks) ? project.tasks : []
+            }))
+          };
+        });
+      },
       deleteTask: (id) =>
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== id),

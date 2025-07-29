@@ -6,7 +6,8 @@ import {
   formatDate, 
   getInitials, 
   getStatusColor, 
-  getPriorityColor
+  getPriorityColor,
+  formatDuration
 } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { useNavigate, useParams } from "react-router-dom";
@@ -94,7 +95,7 @@ export default function TaskDetail() {
         <Card>
           <CardHeader>
             <CardTitle className="flex justify-between">
-              <h2 className="text-2xl font-bold">{task.title}</h2>
+              <div className="text-2xl font-bold">{task.title}</div>
               <div className="flex gap-2">
                 <Badge className={getStatusColor(task.status)}>
                   {task.status.replace('-', ' ')}
@@ -106,7 +107,14 @@ export default function TaskDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <TaskTimer taskId={task.id} />
+            <div className="space-y-4">
+              <TaskTimer taskId={task.id} />
+              {task.timeSpent && task.timeSpent > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Total time spent: {formatDuration(task.timeSpent)}
+                </div>
+              )}
+            </div>
             <div>
               <h3 className="font-medium mb-2">Description</h3>
               <p className="text-muted-foreground whitespace-pre-wrap">

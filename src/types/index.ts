@@ -51,5 +51,5 @@ export interface Project {
   description: string;
   teamId: string;
   createdAt: string;
-  tasks: Task[];
+  tasks: string[]; // Array of task IDs
 }

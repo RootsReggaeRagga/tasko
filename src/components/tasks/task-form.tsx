@@ -91,7 +91,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
       });
     } else {
       // Create new task
-      addTask({
+      const newTask = {
         title: values.title,
         description: values.description || "",
         status: values.status,
@@ -101,7 +101,10 @@ export function TaskForm({ taskId }: TaskFormProps) {
         createdById: currentUser.id,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
         tags: [],
-      });
+      };
+      
+      addTask(newTask);
+      
       toast({
         title: "Task created",
         description: "New task has been created successfully.",
