@@ -22,6 +22,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +37,7 @@ const formSchema = z.object({
   projectId: z.string().min(1, { message: "Project is required" }),
   assigneeId: z.string().optional(),
   dueDate: z.date().optional(),
+  hourlyRate: z.number().min(0, { message: "Hourly rate must be positive" }).optional(),
 });
 
 interface TaskFormProps {
@@ -67,6 +69,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
       projectId: existingTask?.projectId || (projects[0]?.id || ""),
               assigneeId: existingTask?.assigneeId || "unassigned",
       dueDate: existingTask?.dueDate ? new Date(existingTask.dueDate) : undefined,
+      hourlyRate: existingTask?.hourlyRate || undefined,
     },
   });
 
@@ -86,6 +89,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
         ...values,
         assigneeId: values.assigneeId === "unassigned" ? undefined : values.assigneeId,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
+        hourlyRate: values.hourlyRate,
       });
       toast({
         title: "Task updated",
@@ -102,6 +106,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
         assigneeId: values.assigneeId === "unassigned" ? undefined : values.assigneeId,
         createdById: currentUser.id,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
+        hourlyRate: values.hourlyRate,
         tags: [],
       };
       
@@ -260,44 +265,66 @@ export function TaskForm({ taskId }: TaskFormProps) {
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="dueDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Due Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="dueDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Due Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="hourlyRate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Hourly Rate (PLN)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="50" 
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                    value={field.value || ''}
                   />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="flex gap-2 justify-end">
           <Button 

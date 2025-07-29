@@ -7,7 +7,8 @@ import {
   getInitials, 
   getStatusColor, 
   getPriorityColor,
-  formatDuration
+  formatDuration,
+  formatCurrency
 } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { useNavigate, useParams } from "react-router-dom";
@@ -159,6 +160,18 @@ export default function TaskDetail() {
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Due Date:</span>
                       <span>{formatDate(task.dueDate)}</span>
+                    </div>
+                  )}
+                  {task.hourlyRate && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Hourly Rate:</span>
+                      <span>{formatCurrency(task.hourlyRate)}/h</span>
+                    </div>
+                  )}
+                  {task.cost && task.cost > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Total Cost:</span>
+                      <span className="font-medium text-green-600">{formatCurrency(task.cost)}</span>
                     </div>
                   )}
                 </div>

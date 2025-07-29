@@ -22,11 +22,15 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Project name is required" }),
   description: z.string().optional(),
   teamId: z.string().min(1, { message: "Team is required" }),
+  budget: z.number().min(0, { message: "Budget must be positive" }).optional(),
+  hourlyRate: z.number().min(0, { message: "Hourly rate must be positive" }).optional(),
+  revenue: z.number().min(0, { message: "Revenue must be positive" }).optional(),
 });
 
 export default function NewProject() {
@@ -40,12 +44,22 @@ export default function NewProject() {
       name: "",
       description: "",
       teamId: teams.length > 0 ? teams[0].id : "",
+      budget: undefined,
+      hourlyRate: undefined,
+      revenue: undefined,
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     // Create a new project
-    addProject(values);
+    addProject({
+      name: values.name,
+      description: values.description || "",
+      teamId: values.teamId,
+      budget: values.budget,
+      hourlyRate: values.hourlyRate,
+      revenue: values.revenue,
+    });
     
     toast({
       title: "Project created",
@@ -142,6 +156,68 @@ export default function NewProject() {
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="budget"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget (PLN)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="10000" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="hourlyRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default Hourly Rate (PLN)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="50" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="revenue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Expected Revenue (PLN)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="15000" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex gap-2 justify-end">
               <Button 

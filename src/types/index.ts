@@ -5,6 +5,7 @@ export interface User {
   avatar?: string;
   role: 'admin' | 'member';
   theme?: 'light' | 'dark' | 'system';
+  hourlyRate?: number; // Hourly rate in PLN
 }
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'testing' | 'reopen' | 'done';
@@ -27,6 +28,9 @@ export interface Task {
   timeSpent?: number; // Actual time spent in minutes
   timeStarted?: string; // ISO date string when timer was started
   timeTracking?: TimeTrackingRecord[]; // History of time tracking records
+  // Financial fields
+  hourlyRate?: number; // Hourly rate for this task in PLN
+  cost?: number; // Calculated cost based on time spent and hourly rate
 }
 
 export interface TimeTrackingRecord {
@@ -55,6 +59,10 @@ export interface Project {
   category?: 'web-development' | 'mobile-app' | 'design' | 'marketing' | 'seo' | 'ecommerce' | 'consulting';
   createdAt: string;
   tasks: string[]; // Array of task IDs
+  // Financial fields
+  budget?: number; // Project budget in PLN
+  hourlyRate?: number; // Default hourly rate for project tasks
+  revenue?: number; // Project revenue in PLN
 }
 
 export interface Client {

@@ -84,3 +84,56 @@ export function getPriorityColor(priority: string) {
       return "bg-slate-500 hover:bg-slate-500";
   }
 }
+
+export function formatCategory(category: string): string {
+  return category
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+export function calculateTaskCost(timeSpentMinutes: number, hourlyRate: number): number {
+  const hoursSpent = timeSpentMinutes / 60;
+  return Math.round(hoursSpent * hourlyRate * 100) / 100; // Round to 2 decimal places
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('pl-PL', {
+    style: 'currency',
+    currency: 'PLN'
+  }).format(amount);
+}
+
+export function calculateProjectCosts(tasks: any[], projectHourlyRate?: number): {
+  totalCost: number;
+  totalTime: number;
+  averageHourlyRate: number;
+} {
+  let totalCost = 0;
+  let totalTime = 0;
+  let totalRate = 0;
+  let rateCount = 0;
+
+  tasks.forEach(task => {
+    if (task.timeSpent && task.timeSpent > 0) {
+      const taskHourlyRate = task.hourlyRate || projectHourlyRate || 0;
+      const taskCost = calculateTaskCost(task.timeSpent, taskHourlyRate);
+      
+      totalCost += taskCost;
+      totalTime += task.timeSpent;
+      
+      if (taskHourlyRate > 0) {
+        totalRate += taskHourlyRate;
+        rateCount++;
+      }
+    }
+  });
+
+  const averageHourlyRate = rateCount > 0 ? totalRate / rateCount : 0;
+
+  return {
+    totalCost,
+    totalTime,
+    averageHourlyRate
+  };
+}

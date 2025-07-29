@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatCurrency, calculateProjectCosts } from "@/lib/utils";
 
 const formatCategory = (category: string) => {
   return category
@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Projects() {
   const navigate = useNavigate();
-  const { projects, teams, clients } = useAppStore();
+  const { projects, teams, clients, tasks } = useAppStore();
 
   return (
     <div className="space-y-6">
@@ -46,7 +46,9 @@ export default function Projects() {
           {projects.map((project) => {
             const team = teams.find(t => t.id === project.teamId);
             const client = clients.find(c => c.id === project.clientId);
-            const completedTasks = 0; // TODO: Calculate from actual tasks
+            const projectTasks = tasks.filter(t => t.projectId === project.id);
+            const completedTasks = projectTasks.filter(t => t.status === 'done').length;
+            const { totalCost, totalTime } = calculateProjectCosts(projectTasks, project.hourlyRate);
             
             return (
               <Card key={project.id} className="overflow-hidden">
@@ -66,13 +68,31 @@ export default function Projects() {
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {project.description}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Created on {formatDate(project.createdAt)}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Created on {formatDate(project.createdAt)}
+                      </div>
+                      <Badge variant="outline">
+                        {completedTasks}/{project.tasks.length} tasks
+                      </Badge>
                     </div>
-                    <Badge variant="outline">
-                      {completedTasks}/{project.tasks.length} tasks
-                    </Badge>
+                    {(project.budget || project.revenue || totalCost > 0) && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Financial:</span>
+                        <div className="flex gap-2">
+                          {project.budget && (
+                            <span className="text-blue-600">Budget: {formatCurrency(project.budget)}</span>
+                          )}
+                          {project.revenue && (
+                            <span className="text-green-600">Revenue: {formatCurrency(project.revenue)}</span>
+                          )}
+                          {totalCost > 0 && (
+                            <span className="text-red-600">Cost: {formatCurrency(totalCost)}</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter className="border-t bg-muted/50 p-2">

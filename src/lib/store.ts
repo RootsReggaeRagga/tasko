@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Task, Team, Project, Client, Invitation } from '@/types';
-import { generateId } from '@/lib/utils';
+import { generateId, calculateTaskCost } from '@/lib/utils';
 
 interface State {
   users: User[];
@@ -162,7 +162,8 @@ export const useAppStore = create<State & Actions>()(
           ...task, 
           id: generateId(), 
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          cost: task.hourlyRate && task.timeSpent ? calculateTaskCost(task.timeSpent, task.hourlyRate) : 0
         };
         
         set((state) => ({
@@ -177,11 +178,19 @@ export const useAppStore = create<State & Actions>()(
       updateTask: (id, task) => {
         console.log("updateTask called:", { id, task });
         set((state) => {
-          const updatedTasks = state.tasks.map((t) => 
-            t.id === id 
-              ? { ...t, ...task, updatedAt: new Date().toISOString() } 
-              : t
-          );
+          const updatedTasks = state.tasks.map((t) => {
+            if (t.id === id) {
+              const updatedTask = { ...t, ...task, updatedAt: new Date().toISOString() };
+              // Recalculate cost if timeSpent or hourlyRate changed
+              if (task.timeSpent !== undefined || task.hourlyRate !== undefined) {
+                const newTimeSpent = task.timeSpent !== undefined ? task.timeSpent : t.timeSpent;
+                const newHourlyRate = task.hourlyRate !== undefined ? task.hourlyRate : t.hourlyRate;
+                updatedTask.cost = newHourlyRate && newTimeSpent ? calculateTaskCost(newTimeSpent, newHourlyRate) : 0;
+              }
+              return updatedTask;
+            }
+            return t;
+          });
           
           const updatedTask = updatedTasks.find(t => t.id === id);
           console.log("Updated task:", updatedTask);

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from "@/lib/store";
-import { formatDate, formatDuration } from "@/lib/utils";
+import { formatDate, formatDuration, formatCurrency, calculateProjectCosts } from "@/lib/utils";
 import { 
   BarChart3, 
   PieChart, 
@@ -18,7 +18,9 @@ import {
   Target,
   CheckCircle,
   AlertCircle,
-  Play
+  Play,
+  DollarSign,
+  TrendingDown
 } from "lucide-react";
 
 type TimeRange = '7d' | '30d' | '90d' | '1y' | 'all';
@@ -57,6 +59,35 @@ export default function Reports() {
   // Client statistics
   const totalClients = clients.length;
   const activeClients = clients.filter(c => c.status === 'active').length;
+
+  // Financial statistics
+  const totalCosts = tasks.reduce((total, task) => total + (task.cost || 0), 0);
+  const totalRevenue = projects.reduce((total, project) => total + (project.revenue || 0), 0);
+  const totalProfit = totalRevenue - totalCosts;
+  const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+  // Project financial analysis
+  const projectFinancials = projects.map(project => {
+    const projectTasks = tasks.filter(t => t.projectId === project.id);
+    const { totalCost, totalTime, averageHourlyRate } = calculateProjectCosts(projectTasks, project.hourlyRate);
+    const projectRevenue = project.revenue || 0;
+    const projectProfit = projectRevenue - totalCost;
+    
+    return {
+      ...project,
+      totalCost,
+      totalTime,
+      averageHourlyRate,
+      revenue: projectRevenue,
+      profit: projectProfit,
+      profitMargin: projectRevenue > 0 ? (projectProfit / projectRevenue) * 100 : 0
+    };
+  });
+
+  const topProfitableProjects = projectFinancials
+    .filter(p => p.revenue > 0)
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 5);
 
   // Task status distribution
   const taskStatusDistribution = {
@@ -211,6 +242,47 @@ export default function Reports() {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</div>
+            <p className="text-xs text-muted-foreground">
+              from {projects.filter(p => p.revenue && p.revenue > 0).length} projects
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Costs</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{formatCurrency(totalCosts)}</div>
+            <p className="text-xs text-muted-foreground">
+              {formatDuration(totalTimeSpent)} of work
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(totalProfit)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {profitMargin.toFixed(1)}% margin
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
@@ -218,6 +290,7 @@ export default function Reports() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
         </TabsList>
@@ -368,6 +441,100 @@ export default function Reports() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="financial" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Most Profitable Projects */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Most Profitable Projects</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {topProfitableProjects.map((project, index) => (
+                    <div key={project.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">#{index + 1}</span>
+                        <div>
+                          <div className="text-sm font-medium">{project.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatCurrency(project.revenue)} revenue
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-sm font-medium ${project.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(project.profit)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {project.profitMargin.toFixed(1)}% margin
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Project Financial Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Project Financial Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {projectFinancials.slice(0, 5).map((project) => (
+                    <div key={project.id} className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">{project.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDuration(project.totalTime)} work
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">{formatCurrency(project.totalCost)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatCurrency(project.averageHourlyRate)}/h avg
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Financial Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Financial Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</div>
+                  <div className="text-sm text-muted-foreground">Total Revenue</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{formatCurrency(totalCosts)}</div>
+                  <div className="text-sm text-muted-foreground">Total Costs</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(totalProfit)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Net Profit</div>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <div className="text-center">
+                  <div className="text-lg font-medium">{profitMargin.toFixed(1)}%</div>
+                  <div className="text-sm text-muted-foreground">Profit Margin</div>
+                </div>
               </div>
             </CardContent>
           </Card>
