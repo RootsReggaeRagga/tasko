@@ -17,26 +17,44 @@ export function DemoLogin() {
       {
         name: "Demo User",
         email: "demo@example.com",
-        role: "member" as const,
-        theme: "system" as const
+        role: "admin" as const,
+        theme: "system" as const,
+        hourlyRate: 75
       },
       {
         name: "Alice Johnson",
         email: "alice@example.com",
         role: "member" as const,
-        theme: "light" as const
+        theme: "light" as const,
+        hourlyRate: 60
       },
       {
         name: "Bob Smith",
         email: "bob@example.com",
         role: "member" as const,
-        theme: "dark" as const
+        theme: "dark" as const,
+        hourlyRate: 55
       },
       {
         name: "Carol Davis",
         email: "carol@example.com",
         role: "admin" as const,
-        theme: "system" as const
+        theme: "system" as const,
+        hourlyRate: 80
+      },
+      {
+        name: "Diana Miller",
+        email: "diana@example.com",
+        role: "member" as const,
+        theme: "dark" as const,
+        hourlyRate: 65
+      },
+      {
+        name: "Eve Wilson",
+        email: "eve@example.com",
+        role: "member" as const,
+        theme: "light" as const,
+        hourlyRate: 45
       }
     ];
 

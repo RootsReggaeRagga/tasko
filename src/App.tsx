@@ -20,6 +20,7 @@ import Projects from '@/pages/Projects';
 import ProjectInvite from '@/pages/ProjectInvite';
 import Clients from '@/pages/Clients';
 import Reports from '@/pages/Reports';
+import Users from '@/pages/Users';
 import NewProject from '@/pages/NewProject';
 import ProjectDetail from '@/pages/ProjectDetail';
 import ProjectBoard from '@/pages/ProjectBoard';
@@ -57,6 +58,7 @@ const AppContent = () => {
             <Route path="projects/:projectId/invite" element={<ProjectInvite />} />
               <Route path="clients" element={<Clients />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="users" element={<Users />} />
               <Route path="new-project" element={<NewProject />} />
             </Route>
             

@@ -10,10 +10,12 @@ import {
   ChevronRight,
   FolderOpen,
   Building2,
-  TrendingUp
+  TrendingUp,
+  UserCheck
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { useAppStore } from "@/lib/store";
 
 interface SidebarProps {
   className?: string;
@@ -23,6 +25,8 @@ export function Sidebar({ className }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser } = useAppStore();
+  const isAdmin = currentUser?.role === 'admin';
 
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -59,6 +63,11 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/reports",
       icon: TrendingUp,
     },
+    ...(isAdmin ? [{
+      name: "Users",
+      href: "/users",
+      icon: UserCheck,
+    }] : []),
     {
       name: "Settings",
       href: "/settings",

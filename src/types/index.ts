@@ -6,6 +6,8 @@ export interface User {
   role: 'admin' | 'member';
   theme?: 'light' | 'dark' | 'system';
   hourlyRate?: number; // Hourly rate in PLN
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'testing' | 'reopen' | 'done';

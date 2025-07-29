@@ -20,6 +20,8 @@ interface Actions {
   updateUser: (id: string, user: Partial<User>) => void;
   deleteUser: (id: string) => void;
   setCurrentUser: (user: User | null) => void;
+  setUserRole: (id: string, role: 'admin' | 'member') => void;
+  setUserHourlyRate: (id: string, hourlyRate: number) => void;
   
   // Team actions
   addTeam: (team: Omit<Team, 'id' | 'createdAt'>) => void;
@@ -69,19 +71,68 @@ export const useAppStore = create<State & Actions>()(
       // User actions
       addUser: (user) => 
         set((state) => ({
-          users: [...state.users, { ...user, id: generateId() }]
+          users: [...state.users, { 
+            ...user, 
+            id: generateId(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }]
         })),
       updateUser: (id, user) =>
         set((state) => ({
-          users: state.users.map((u) => (u.id === id ? { ...u, ...user } : u))
+          users: state.users.map((u) => 
+            u.id === id 
+              ? { ...u, ...user, updatedAt: new Date().toISOString() } 
+              : u
+          )
         })),
       deleteUser: (id) =>
-        set((state) => ({
-          users: state.users.filter((u) => u.id !== id)
-        })),
+        set((state) => {
+          // Check if user is current user
+          if (state.currentUser?.id === id) {
+            console.warn("Cannot delete current user");
+            return state;
+          }
+
+          // Check if user has assigned tasks
+          const hasAssignedTasks = state.tasks.some(task => task.assigneeId === id);
+          if (hasAssignedTasks) {
+            console.warn("Cannot delete user with assigned tasks");
+            return state;
+          }
+
+          // Check if user is in any teams
+          const isInTeams = state.teams.some(team => 
+            team.members.some(member => member.id === id)
+          );
+          if (isInTeams) {
+            console.warn("Cannot delete user who is a team member");
+            return state;
+          }
+
+          return {
+            users: state.users.filter((u) => u.id !== id)
+          };
+        }),
       setCurrentUser: (user) =>
         set(() => ({
           currentUser: user
+        })),
+      setUserRole: (id, role) =>
+        set((state) => ({
+          users: state.users.map((user) => 
+            user.id === id 
+              ? { ...user, role, updatedAt: new Date().toISOString() } 
+              : user
+          )
+        })),
+      setUserHourlyRate: (id, hourlyRate) =>
+        set((state) => ({
+          users: state.users.map((user) => 
+            user.id === id 
+              ? { ...user, hourlyRate, updatedAt: new Date().toISOString() } 
+              : user
+          )
         })),
 
       // Team actions
