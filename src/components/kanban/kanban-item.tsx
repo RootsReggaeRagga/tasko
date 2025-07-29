@@ -1,76 +1,119 @@
 import React from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
-import { Task } from "@/types";
-import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Task, User } from "@/types";
+import { formatDate, getInitials, getPriorityColor, formatDuration } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
 
 interface KanbanItemProps {
   task: Task;
+  users: User[];
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }
 
-const priorityConfig = {
-  low: { color: "bg-slate-100 text-slate-800 hover:bg-slate-200" },
-  medium: { color: "bg-blue-100 text-blue-800 hover:bg-blue-200" },
-  high: { color: "bg-red-100 text-red-800 hover:bg-red-200" }
-};
+export function KanbanItem({ task, users, onDragStart, onDragEnd }: KanbanItemProps) {
+  const navigate = useNavigate();
+  const assignee = users.find(u => u.id === task.assigneeId);
 
-export function KanbanItem({ task }: KanbanItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: task.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? "grabbing" : "grab"
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", task.id);
+    onDragStart();
   };
 
-  const priorityStyle = priorityConfig[task.priority];
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.preventDefault();
+    onDragEnd();
+  };
+
+  const handleClick = () => {
+    navigate(`/tasks/${task.id}`);
+  };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
+    <Card
+      className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-blue-500"
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onClick={handleClick}
     >
-      <Link to={`/tasks/${task.id}`}>
-        <Card className="hover:border-primary cursor-grab active:cursor-grabbing hover:bg-accent/40 transition-all">
-          <CardContent className="p-3">
-            <div className="font-medium text-sm line-clamp-1">{task.title}</div>
-            
-            {task.description && (
-              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {task.description}
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          {/* Title and Priority */}
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="font-medium text-sm line-clamp-2 flex-1">
+              {task.title}
+            </h4>
+            <Badge 
+              className={cn("text-xs shrink-0", getPriorityColor(task.priority))}
+            >
+              {task.priority}
+            </Badge>
+          </div>
+
+          {/* Description */}
+          {task.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {task.description}
+            </p>
+          )}
+
+          {/* Time tracking */}
+          {task.timeSpent && task.timeSpent > 0 && (
+            <div className="text-xs text-muted-foreground">
+              ⏱️ {formatDuration(task.timeSpent)}
+            </div>
+          )}
+
+          {/* Due date */}
+          {task.dueDate && (
+            <div className="text-xs text-muted-foreground">
+              📅 {formatDate(task.dueDate)}
+            </div>
+          )}
+
+          {/* Assignee */}
+          <div className="flex items-center justify-between">
+            {assignee ? (
+              <div className="flex items-center gap-1">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={assignee.avatar} alt={assignee.name} />
+                  <AvatarFallback className="text-xs">
+                    {getInitials(assignee.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-muted-foreground">
+                  {assignee.name}
+                </span>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Unassigned
+              </span>
+            )}
+
+            {/* Tags */}
+            {task.tags.length > 0 && (
+              <div className="flex gap-1">
+                {task.tags.slice(0, 2).map((tag, index) => (
+                  <Badge key={index} variant="outline" className="text-xs px-1 py-0">
+                    {tag}
+                  </Badge>
+                ))}
+                {task.tags.length > 2 && (
+                  <Badge variant="outline" className="text-xs px-1 py-0">
+                    +{task.tags.length - 2}
+                  </Badge>
+                )}
               </div>
             )}
-            
-            <div className="flex items-center justify-between mt-3">
-              <Badge variant="outline" className={cn(priorityStyle.color, "capitalize")}>
-                {task.priority}
-              </Badge>
-              
-              {task.dueDate && (
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <CalendarIcon className="h-3 w-3 mr-1" />
-                  <span>{format(new Date(task.dueDate), "MMM d")}</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-    </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

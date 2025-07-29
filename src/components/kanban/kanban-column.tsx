@@ -1,62 +1,73 @@
 import React from "react";
-import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-
-import { Task, TaskStatus } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Task, User, TaskStatus } from "@/types";
 import { KanbanItem } from "./kanban-item";
 import { cn } from "@/lib/utils";
 
 interface KanbanColumnProps {
-  status: TaskStatus;
+  status: { id: TaskStatus; label: string; color: string };
   tasks: Task[];
+  users: User[];
+  onDragStart: (task: Task) => void;
+  onDragEnd: () => void;
+  onDrop: () => void;
+  isDragOver: boolean;
 }
 
-const statusConfig = {
-  todo: { title: "To Do", color: "bg-slate-100" },
-  "in-progress": { title: "In Progress", color: "bg-blue-50" },
-  review: { title: "In Review", color: "bg-yellow-50" },
-  done: { title: "Done", color: "bg-green-50" }
-};
+export function KanbanColumn({ 
+  status, 
+  tasks, 
+  users, 
+  onDragStart, 
+  onDragEnd, 
+  onDrop, 
+  isDragOver 
+}: KanbanColumnProps) {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
 
-export function KanbanColumn({ status, tasks }: KanbanColumnProps) {
-  const { setNodeRef } = useDroppable({
-    id: status,
-  });
-
-  const config = statusConfig[status];
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    onDrop();
+  };
 
   return (
-    <div
-      ref={setNodeRef}
+    <Card 
       className={cn(
-        "flex flex-col rounded-lg border shadow-sm",
-        config.color
+        "min-h-[500px] transition-colors",
+        status.color,
+        isDragOver && "ring-2 ring-blue-400 ring-opacity-50"
       )}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
-      <div className="p-3 border-b bg-opacity-80">
-        <h3 className="font-medium text-sm">{config.title}</h3>
-        <div className="text-xs text-muted-foreground mt-1">
-          {tasks.length} task{tasks.length !== 1 ? "s" : ""}
-        </div>
-      </div>
-
-      <SortableContext
-        id={status}
-        items={tasks.map(task => task.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="flex-1 p-2 overflow-y-auto max-h-[65vh] space-y-2">
-          {tasks.length > 0 ? (
-            tasks.map((task) => (
-              <KanbanItem key={task.id} task={task} />
-            ))
-          ) : (
-            <div className="text-center py-4 text-sm text-muted-foreground">
-              No tasks
-            </div>
-          )}
-        </div>
-      </SortableContext>
-    </div>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          <span>{status.label}</span>
+          <Badge variant="secondary" className="text-xs">
+            {tasks.length}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {tasks.length > 0 ? (
+          tasks.map((task) => (
+            <KanbanItem 
+              key={task.id} 
+              task={task} 
+              users={users}
+              onDragStart={() => onDragStart(task)}
+              onDragEnd={onDragEnd}
+            />
+          ))
+        ) : (
+          <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed border-gray-200 rounded-lg">
+            No tasks
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

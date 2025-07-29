@@ -6,7 +6,7 @@ export interface User {
   role: 'admin' | 'member';
 }
 
-export type TaskStatus = 'todo' | 'in-progress' | 'testing' | 'reopen' | 'done';
+export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'testing' | 'reopen' | 'done';
 
 export interface Task {
   id: string;
