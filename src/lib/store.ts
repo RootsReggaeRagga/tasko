@@ -42,6 +42,9 @@ interface Actions {
   addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
   updateClient: (id: string, client: Partial<Client>) => void;
   deleteClient: (id: string) => void;
+  
+  // Theme actions
+  setUserTheme: (userId: string, theme: 'light' | 'dark' | 'system') => void;
 }
 
 export const useAppStore = create<State & Actions>()(
@@ -218,6 +221,17 @@ export const useAppStore = create<State & Actions>()(
               ? { ...project, clientId: undefined }
               : project
           )
+        })),
+
+      // Theme actions
+      setUserTheme: (userId, theme) =>
+        set((state) => ({
+          users: state.users.map((user) => 
+            user.id === userId ? { ...user, theme } : user
+          ),
+          currentUser: state.currentUser?.id === userId 
+            ? { ...state.currentUser, theme }
+            : state.currentUser
         })),
     }),
     {

@@ -12,6 +12,7 @@ import { useAppStore } from "@/lib/store";
 import { getInitials } from "@/lib/utils";
 import { LogOut, Plus, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Header() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Button 
             variant="outline" 
             size="sm" 

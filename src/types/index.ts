@@ -4,6 +4,7 @@ export interface User {
   email: string;
   avatar?: string;
   role: 'admin' | 'member';
+  theme?: 'light' | 'dark' | 'system';
 }
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'testing' | 'reopen' | 'done';

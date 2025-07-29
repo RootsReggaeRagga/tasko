@@ -17,22 +17,26 @@ export function DemoLogin() {
       {
         name: "Demo User",
         email: "demo@example.com",
-        role: "member" as const
+        role: "member" as const,
+        theme: "system" as const
       },
       {
         name: "Alice Johnson",
         email: "alice@example.com",
-        role: "member" as const
+        role: "member" as const,
+        theme: "light" as const
       },
       {
         name: "Bob Smith",
         email: "bob@example.com",
-        role: "member" as const
+        role: "member" as const,
+        theme: "dark" as const
       },
       {
         name: "Carol Davis",
         email: "carol@example.com",
-        role: "admin" as const
+        role: "admin" as const,
+        theme: "system" as const
       }
     ];
 

@@ -1,0 +1,48 @@
+import { useEffect } from 'react';
+import { useAppStore } from '@/lib/store';
+
+export function useTheme() {
+  const { currentUser, setUserTheme } = useAppStore();
+  
+  // Get theme from current user, default to 'system'
+  const theme = currentUser?.theme || 'system';
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    
+    // Remove existing theme classes
+    root.classList.remove('light', 'dark');
+    
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+  }, [theme]);
+
+  // Listen for system theme changes
+  useEffect(() => {
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      
+      const handleChange = () => {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        const systemTheme = mediaQuery.matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+      };
+
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [theme]);
+
+  const setTheme = (newTheme: 'light' | 'dark' | 'system') => {
+    if (currentUser) {
+      setUserTheme(currentUser.id, newTheme);
+    }
+  };
+
+  return { theme, setTheme };
+} 

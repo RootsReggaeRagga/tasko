@@ -74,6 +74,7 @@ export function LoginForm() {
           email: data.user.email || "",
           name: userData?.name || data.user.email?.split('@')[0] || "User",
           role: userData?.role || 'member',
+          theme: 'system' as const,
         };
 
         // Check if user already exists in store
