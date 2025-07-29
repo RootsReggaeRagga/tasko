@@ -49,6 +49,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
     tasks, 
     users, 
     projects, 
+    teams,
     currentUser,
     addTask, 
     updateTask 
@@ -64,7 +65,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
       status: existingTask?.status || "todo",
       priority: existingTask?.priority || "medium",
       projectId: existingTask?.projectId || (projects[0]?.id || ""),
-      assigneeId: existingTask?.assigneeId || "",
+              assigneeId: existingTask?.assigneeId || "unassigned",
       dueDate: existingTask?.dueDate ? new Date(existingTask.dueDate) : undefined,
     },
   });
@@ -83,6 +84,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
       // Update existing task
       updateTask(existingTask.id, {
         ...values,
+        assigneeId: values.assigneeId === "unassigned" ? undefined : values.assigneeId,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });
       toast({
@@ -97,7 +99,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
         status: values.status,
         priority: values.priority,
         projectId: values.projectId,
-        assigneeId: values.assigneeId,
+        assigneeId: values.assigneeId === "unassigned" ? undefined : values.assigneeId,
         createdById: currentUser.id,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
         tags: [],
@@ -112,6 +114,12 @@ export function TaskForm({ taskId }: TaskFormProps) {
     }
     navigate('/tasks');
   };
+
+  // Get team members for the selected project
+  const selectedProjectId = form.watch("projectId");
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const selectedTeam = teams.find(t => t.id === selectedProject?.teamId);
+  const teamMembers = selectedTeam?.members || [];
 
   return (
     <Form {...form}>
@@ -229,6 +237,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
                 <Select 
                   onValueChange={field.onChange} 
                   defaultValue={field.value || "unassigned"}
+                  value={field.value || "unassigned"}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -237,7 +246,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {users.map((user) => (
+                    {teamMembers.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.name}
                       </SelectItem>

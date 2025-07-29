@@ -32,7 +32,7 @@ const formSchema = z.object({
 export function LoginForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setCurrentUser } = useAppStore();
+  const { setCurrentUser, addUser, users } = useAppStore();
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -75,6 +75,23 @@ export function LoginForm() {
           name: userData?.name || data.user.email?.split('@')[0] || "User",
           role: userData?.role || 'member',
         };
+
+        // Check if user already exists in store
+        const existingUser = users.find(u => u.id === user.id);
+        console.log("Login - user to add:", user);
+        console.log("Login - existing users:", users);
+        console.log("Login - existing user found:", existingUser);
+        
+        if (!existingUser) {
+          // Add user to store if not exists, but preserve the Supabase ID
+          const { users } = useAppStore.getState();
+          useAppStore.setState({
+            users: [...users, user]
+          });
+          console.log("Login - user added to store");
+        } else {
+          console.log("Login - user already exists in store");
+        }
 
         // Set current user in app state
         setCurrentUser(user);

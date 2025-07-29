@@ -59,7 +59,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     // Create new session
     const newSession: TimeTrackingRecord = {
       id: generateId(),
-      userId: currentUser.id || "demo-user",
+      userId: currentUser.id,
       startTime: new Date(now).toISOString(),
       duration: 0
     };
@@ -137,10 +137,10 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
         duration: sessionElapsed
       };
 
-      // Update task
+      // Update task with session and reset timeSpent
       updateTask(taskId, {
         timeStarted: undefined,
-        timeSpent: totalTime,
+        timeSpent: 0, // Reset timeSpent
         timeTracking: task.timeTracking?.map(session => 
           session.id === currentSession.id ? updatedSession : session
         ) || [updatedSession]
@@ -149,22 +149,12 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       // Fallback
       updateTask(taskId, {
         timeStarted: undefined,
-        timeSpent: totalTime
+        timeSpent: 0 // Reset timeSpent
       });
     }
   }, [task, sessionStartTime, taskId, updateTask]);
 
-  const resetTimer = useCallback(() => {
-    setIsRunning(false);
-    setSessionStartTime(null);
-    setElapsedSeconds(0);
-
-    // Only reset timeSpent and timeStarted, keep timeTracking history
-    updateTask(taskId, {
-      timeSpent: 0,
-      timeStarted: undefined
-    });
-  }, [taskId, updateTask]);
+  // Reset timer function removed - Stop now resets timer and saves to history
 
   if (!task) {
     return null;
@@ -183,30 +173,18 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
           </div>
         </div>
 
-        <div className="flex gap-2 justify-between">
-          {!isRunning ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 gap-1"
-                onClick={startTimer}
-              >
-                <Play className="h-4 w-4" />
-                Start Timer
-              </Button>
-              {task.timeSpent && task.timeSpent > 0 && (
+                    <div className="flex gap-2 justify-between">
+              {!isRunning ? (
                 <Button
                   variant="outline"
                   size="sm"
                   className="flex-1 gap-1"
-                  onClick={resetTimer}
+                  onClick={startTimer}
                 >
-                  Reset
+                  <Play className="h-4 w-4" />
+                  Start Timer
                 </Button>
-              )}
-            </>
-          ) : (
+              ) : (
             <>
               <Button
                 variant="outline"

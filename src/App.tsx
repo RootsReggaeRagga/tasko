@@ -13,6 +13,7 @@ import TaskDetail from '@/pages/TaskDetail';
 import Teams from '@/pages/Teams';
 import NewTeam from '@/pages/NewTeam';
 import TeamDetail from '@/pages/TeamDetail';
+import TeamInvite from '@/pages/TeamInvite';
 import Projects from '@/pages/Projects';
 import NewProject from '@/pages/NewProject';
 import ProjectDetail from '@/pages/ProjectDetail';
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="new-task" element={<NewTask />} />
             <Route path="teams" element={<Teams />} />
             <Route path="teams/:id" element={<TeamDetail />} />
+            <Route path="teams/:id/invite" element={<TeamInvite />} />
             <Route path="new-team" element={<NewTeam />} />
             <Route path="projects" element={<Projects />} />
             <Route path="projects/:id" element={<ProjectDetail />} />

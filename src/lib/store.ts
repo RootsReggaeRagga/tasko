@@ -88,16 +88,24 @@ export const useAppStore = create<State & Actions>()(
           currentTeam: team
         })),
       addMemberToTeam: (teamId, userId) =>
-        set((state) => ({
-          teams: state.teams.map((team) => 
-            team.id === teamId 
-              ? { 
-                  ...team, 
-                  members: [...team.members, state.users.find(u => u.id === userId)!]
-                } 
-              : team
-          )
-        })),
+        set((state) => {
+          const user = state.users.find(u => u.id === userId);
+          if (!user) {
+            console.error(`User with id ${userId} not found`);
+            return state;
+          }
+          
+          return {
+            teams: state.teams.map((team) => 
+              team.id === teamId 
+                ? { 
+                    ...team, 
+                    members: [...team.members, user]
+                  } 
+                : team
+            )
+          };
+        }),
       removeMemberFromTeam: (teamId, userId) =>
         set((state) => ({
           teams: state.teams.map((team) => 

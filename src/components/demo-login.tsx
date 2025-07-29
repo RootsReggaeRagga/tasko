@@ -12,18 +12,35 @@ export function DemoLogin() {
   const loginAsDemoUser = () => {
     const { addUser, addTeam, addProject, setCurrentUser } = useAppStore.getState();
     
-    // Create a demo user
-    const demoUser = {
-      name: "Demo User",
-      email: "demo@example.com",
-      role: "member" as const
-    };
+    // Create demo users
+    const demoUsers = [
+      {
+        name: "Demo User",
+        email: "demo@example.com",
+        role: "member" as const
+      },
+      {
+        name: "Alice Johnson",
+        email: "alice@example.com",
+        role: "member" as const
+      },
+      {
+        name: "Bob Smith",
+        email: "bob@example.com",
+        role: "member" as const
+      },
+      {
+        name: "Carol Davis",
+        email: "carol@example.com",
+        role: "admin" as const
+      }
+    ];
 
-    // Add demo user to store and get the generated ID
-    addUser(demoUser);
+    // Add all demo users to store
+    demoUsers.forEach(user => addUser(user));
     
-    // Get the added user from store to get the generated ID
-    const addedUser = useAppStore.getState().users.find(u => u.email === demoUser.email);
+    // Get the main demo user from store to get the generated ID
+    const addedUser = useAppStore.getState().users.find(u => u.email === "demo@example.com");
     
     if (!addedUser) {
       toast({
