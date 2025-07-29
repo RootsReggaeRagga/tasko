@@ -27,6 +27,11 @@ export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
   const { currentUser } = useAppStore();
   const isAdmin = currentUser?.role === 'admin';
+  
+  // Debug: sprawdź currentUser
+  console.log('Sidebar Debug - currentUser:', currentUser);
+  console.log('Sidebar Debug - isAdmin:', isAdmin);
+  console.log('Sidebar Debug - currentUser?.role:', currentUser?.role);
 
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);

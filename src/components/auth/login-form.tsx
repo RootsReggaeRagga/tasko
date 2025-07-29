@@ -80,6 +80,10 @@ export function LoginForm() {
           updatedAt: new Date().toISOString(),
         };
 
+        // Debug: sprawdź user object
+        console.log('Login - created user object:', user);
+        console.log('Login - userData from Supabase:', userData);
+
         // Check if user already exists in store
         const existingUser = users.find(u => u.id === user.id);
         

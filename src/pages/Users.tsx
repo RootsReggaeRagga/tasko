@@ -53,7 +53,12 @@ interface UserFormData {
 export default function Users() {
   const { toast } = useToast();
   const { users, tasks, teams, addUser, updateUser, deleteUser, setUserRole, setUserHourlyRate, currentUser } = useAppStore();
-  
+
+  // Debug: sprawdź currentUser
+  console.log('Users page - currentUser:', currentUser);
+  console.log('Users page - currentUser?.role:', currentUser?.role);
+  console.log('Users page - isAdmin check:', currentUser?.role === 'admin');
+
   // Check if user is admin
   if (!currentUser || currentUser.role !== 'admin') {
     return (
