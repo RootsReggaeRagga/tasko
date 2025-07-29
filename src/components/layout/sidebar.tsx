@@ -7,7 +7,10 @@ import {
   BarChart4, 
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FolderOpen,
+  Building2,
+  TrendingUp
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -32,6 +35,16 @@ export function Sidebar({ className }: SidebarProps) {
       icon: LayoutDashboard,
     },
     {
+      name: "Projects",
+      href: "/projects",
+      icon: FolderOpen,
+    },
+    {
+      name: "Clients",
+      href: "/clients",
+      icon: Building2,
+    },
+    {
       name: "Teams",
       href: "/teams",
       icon: Users,
@@ -44,7 +57,7 @@ export function Sidebar({ className }: SidebarProps) {
     {
       name: "Reports",
       href: "/reports",
-      icon: BarChart4,
+      icon: TrendingUp,
     },
     {
       name: "Settings",

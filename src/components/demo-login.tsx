@@ -10,7 +10,7 @@ export function DemoLogin() {
   const navigate = useNavigate();
 
   const loginAsDemoUser = () => {
-    const { addUser, addTeam, addProject, setCurrentUser } = useAppStore.getState();
+    const { addUser, addTeam, addProject, addClient, setCurrentUser } = useAppStore.getState();
     
     // Create demo users
     const demoUsers = [
@@ -62,13 +62,91 @@ export function DemoLogin() {
     const addedTeam = useAppStore.getState().teams.find(t => t.name === demoTeam.name);
     
     if (addedTeam) {
-      // Create a demo project
-      const demoProject = {
-        name: "Demo Project",
-        description: "A demo project for testing",
-        teamId: addedTeam.id
-      };
-      addProject(demoProject);
+      // Create demo clients
+      const demoClients = [
+        {
+          name: "John Smith",
+          email: "john.smith@acme.com",
+          phone: "+1 (555) 123-4567",
+          company: "Acme Corporation",
+          status: "active" as const
+        },
+        {
+          name: "Sarah Johnson",
+          email: "sarah.johnson@techstart.com",
+          phone: "+1 (555) 987-6543",
+          company: "TechStart Inc",
+          status: "active" as const
+        },
+        {
+          name: "Mike Wilson",
+          email: "mike.wilson@globalsoft.com",
+          company: "GlobalSoft Solutions",
+          status: "inactive" as const
+        }
+      ];
+
+      // Add demo clients
+      demoClients.forEach(client => addClient(client));
+
+      // Create demo projects with client associations
+      const demoProjects = [
+        // Acme Corporation - multiple projects
+        {
+          name: "Website Redesign",
+          description: "Complete redesign of the company website with modern UI/UX",
+          teamId: addedTeam.id,
+          clientId: useAppStore.getState().clients.find(c => c.company === "Acme Corporation")?.id,
+          category: "web-development" as const
+        },
+        {
+          name: "Mobile App Development",
+          description: "iOS and Android app for customer management and sales tracking",
+          teamId: addedTeam.id,
+          clientId: useAppStore.getState().clients.find(c => c.company === "Acme Corporation")?.id,
+          category: "mobile-app" as const
+        },
+        {
+          name: "Digital Marketing Campaign",
+          description: "Google Ads and social media advertising campaign",
+          teamId: addedTeam.id,
+          clientId: useAppStore.getState().clients.find(c => c.company === "Acme Corporation")?.id,
+          category: "marketing" as const
+        },
+        {
+          name: "SEO Optimization",
+          description: "Search engine optimization for better online visibility",
+          teamId: addedTeam.id,
+          clientId: useAppStore.getState().clients.find(c => c.company === "Acme Corporation")?.id,
+          category: "seo" as const
+        },
+        
+        // TechStart Inc - multiple projects
+        {
+          name: "E-commerce Platform",
+          description: "Online store with payment integration and inventory management",
+          teamId: addedTeam.id,
+          clientId: useAppStore.getState().clients.find(c => c.company === "TechStart Inc")?.id,
+          category: "ecommerce" as const
+        },
+        {
+          name: "Brand Identity Design",
+          description: "Logo design, brand guidelines, and marketing materials",
+          teamId: addedTeam.id,
+          clientId: useAppStore.getState().clients.find(c => c.company === "TechStart Inc")?.id,
+          category: "design" as const
+        },
+        {
+          name: "Content Marketing Strategy",
+          description: "Blog content, social media posts, and email campaigns",
+          teamId: addedTeam.id,
+          clientId: useAppStore.getState().clients.find(c => c.company === "TechStart Inc")?.id,
+          category: "marketing" as const
+        }
+      ];
+
+      // Add demo projects
+      demoProjects.forEach(project => addProject(project));
     }
 
     // Set as current user

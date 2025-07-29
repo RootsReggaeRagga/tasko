@@ -3,12 +3,19 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
 import { formatDate } from "@/lib/utils";
+
+const formatCategory = (category: string) => {
+  return category
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Projects() {
   const navigate = useNavigate();
-  const { projects, teams } = useAppStore();
+  const { projects, teams, clients } = useAppStore();
 
   return (
     <div className="space-y-6">
@@ -38,7 +45,8 @@ export default function Projects() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {
             const team = teams.find(t => t.id === project.teamId);
-            const completedTasks = project.tasks.filter(t => t.status === 'done').length;
+            const client = clients.find(c => c.id === project.clientId);
+            const completedTasks = 0; // TODO: Calculate from actual tasks
             
             return (
               <Card key={project.id} className="overflow-hidden">
@@ -46,6 +54,12 @@ export default function Projects() {
                   <CardTitle>{project.name}</CardTitle>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <span>Team: {team?.name || 'No team'}</span>
+                    {client && (
+                      <span className="ml-2">• Client: {client.company}</span>
+                    )}
+                    {project.category && (
+                      <span className="ml-2">• {formatCategory(project.category)}</span>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>

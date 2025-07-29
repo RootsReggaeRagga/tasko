@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, Task, Team, Project } from '@/types';
+import { User, Task, Team, Project, Client } from '@/types';
 import { generateId } from '@/lib/utils';
 
 interface State {
@@ -8,6 +8,7 @@ interface State {
   tasks: Task[];
   teams: Team[];
   projects: Project[];
+  clients: Client[];
   currentUser: User | null;
   currentTeam: Team | null;
 }
@@ -36,6 +37,11 @@ interface Actions {
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (id: string, task: Partial<Task>) => void;
   deleteTask: (id: string) => void;
+  
+  // Client actions
+  addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
+  updateClient: (id: string, client: Partial<Client>) => void;
+  deleteClient: (id: string) => void;
 }
 
 export const useAppStore = create<State & Actions>()(
@@ -45,6 +51,7 @@ export const useAppStore = create<State & Actions>()(
       tasks: [],
       teams: [],
       projects: [],
+      clients: [],
       currentUser: null,
       currentTeam: null,
 
@@ -187,6 +194,30 @@ export const useAppStore = create<State & Actions>()(
               ? project.tasks.filter(taskId => taskId !== id)
               : []
           }))
+        })),
+
+      // Client actions
+      addClient: (client) => 
+        set((state) => ({
+          clients: [...state.clients, { 
+            ...client, 
+            id: generateId(), 
+            createdAt: new Date().toISOString()
+          }]
+        })),
+      updateClient: (id, client) =>
+        set((state) => ({
+          clients: state.clients.map((c) => (c.id === id ? { ...c, ...client } : c))
+        })),
+      deleteClient: (id) =>
+        set((state) => ({
+          clients: state.clients.filter((c) => c.id !== id),
+          // Remove clientId from projects when client is deleted
+          projects: state.projects.map(project => 
+            project.clientId === id 
+              ? { ...project, clientId: undefined }
+              : project
+          )
         })),
     }),
     {

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function ProjectDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { projects, teams, tasks } = useAppStore();
+  const { projects, teams, tasks, clients } = useAppStore();
   
   const project = projects.find((p) => p.id === id);
   
@@ -40,6 +40,7 @@ export default function ProjectDetail() {
   }
 
   const team = teams.find(t => t.id === project.teamId);
+  const client = clients.find(c => c.id === project.clientId);
   // Get tasks associated with this project by filtering the tasks array
   const projectTasks = tasks.filter(t => t.projectId === project.id);
   
@@ -93,11 +94,23 @@ export default function ProjectDetail() {
                 Created on {formatDate(project.createdAt)}
               </p>
             </div>
-            {team && (
-              <Badge variant="outline">
-                Team: {team.name}
-              </Badge>
-            )}
+            <div className="flex gap-2">
+              {team && (
+                <Badge variant="outline">
+                  Team: {team.name}
+                </Badge>
+              )}
+              {client && (
+                <Badge variant="outline">
+                  Client: {client.company}
+                </Badge>
+              )}
+              {project.category && (
+                <Badge variant="outline">
+                  {project.category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                </Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">

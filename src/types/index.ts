@@ -50,6 +50,19 @@ export interface Project {
   name: string;
   description: string;
   teamId: string;
+  clientId?: string; // Optional client ID
+  category?: 'web-development' | 'mobile-app' | 'design' | 'marketing' | 'seo' | 'ecommerce' | 'consulting';
   createdAt: string;
   tasks: string[]; // Array of task IDs
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company: string;
+  avatar?: string;
+  createdAt: string;
+  status: 'active' | 'inactive';
 }

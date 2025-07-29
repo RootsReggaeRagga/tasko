@@ -15,6 +15,8 @@ import NewTeam from '@/pages/NewTeam';
 import TeamDetail from '@/pages/TeamDetail';
 import TeamInvite from '@/pages/TeamInvite';
 import Projects from '@/pages/Projects';
+import Clients from '@/pages/Clients';
+import Reports from '@/pages/Reports';
 import NewProject from '@/pages/NewProject';
 import ProjectDetail from '@/pages/ProjectDetail';
 import ProjectBoard from '@/pages/ProjectBoard';
@@ -45,6 +47,8 @@ const App = () => (
             <Route path="projects" element={<Projects />} />
             <Route path="projects/:id" element={<ProjectDetail />} />
             <Route path="projects/:projectId/board" element={<ProjectBoard />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="reports" element={<Reports />} />
             <Route path="new-project" element={<NewProject />} />
           </Route>
           
