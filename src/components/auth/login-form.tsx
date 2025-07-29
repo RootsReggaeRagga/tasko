@@ -73,8 +73,11 @@ export function LoginForm() {
           id: data.user.id,
           email: data.user.email || "",
           name: userData?.name || data.user.email?.split('@')[0] || "User",
-          role: userData?.role || 'member',
+          role: userData?.role || 'admin', // Domyślnie admin dla nowych użytkowników
           theme: 'system' as const,
+          hourlyRate: 50, // Domyślna stawka godzinowa
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
 
         // Check if user already exists in store

@@ -8,6 +8,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from '@supabase/supabase-js';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAppStore } from "@/lib/store";
 
 // Initialize Supabase client
 const supabaseUrl = 'https://wjefekwnlznwgnxxahxu.supabase.co';
@@ -17,6 +18,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addUser, setCurrentUser } = useAppStore();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,13 +48,31 @@ export default function Register() {
         throw error;
       }
 
+      // Create user object with admin role
+      const user = {
+        id: data.user?.id || "",
+        email: email,
+        name: name,
+        role: 'admin' as const, // Nowy użytkownik jest adminem
+        theme: 'system' as const,
+        hourlyRate: 50, // Domyślna stawka godzinowa
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Add user to store
+      addUser(user);
+      
+      // Set as current user
+      setCurrentUser(user);
+
       toast({
         title: "Registration Successful",
-        description: "Please check your email to confirm your account.",
+        description: "Welcome! You are now logged in as an administrator.",
       });
 
-      // Redirect to login page after successful registration
-      navigate("/login", { state: { successMessage: "Registration successful! Please verify your email and login." } });
+      // Redirect to dashboard
+      navigate("/dashboard");
 
     } catch (error: any) {
       console.error("Registration error:", error);
