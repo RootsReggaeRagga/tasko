@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate, getStatusColor, formatDuration } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Edit, Plus, Kanban, ListFilter } from "lucide-react";
+import { ArrowLeft, Edit, Plus, Kanban, ListFilter, UserPlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ProjectDetail() {
@@ -73,6 +73,15 @@ export default function ProjectDetail() {
           >
             <Edit className="h-4 w-4" />
             <span>Edit</span>
+          </Button>
+          <Button 
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            onClick={() => navigate(`/projects/${project.id}/invite`)}
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Invite</span>
           </Button>
           <Button 
             size="sm"

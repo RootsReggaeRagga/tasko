@@ -15,7 +15,9 @@ import Teams from '@/pages/Teams';
 import NewTeam from '@/pages/NewTeam';
 import TeamDetail from '@/pages/TeamDetail';
 import TeamInvite from '@/pages/TeamInvite';
+import AcceptInvitation from '@/pages/AcceptInvitation';
 import Projects from '@/pages/Projects';
+import ProjectInvite from '@/pages/ProjectInvite';
 import Clients from '@/pages/Clients';
 import Reports from '@/pages/Reports';
 import NewProject from '@/pages/NewProject';
@@ -34,8 +36,9 @@ const AppContent = () => {
         <Toaster />
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+                      <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/invite/:token" element={<AcceptInvitation />} />
             
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
@@ -48,9 +51,10 @@ const AppContent = () => {
               <Route path="teams/:id" element={<TeamDetail />} />
               <Route path="teams/:id/invite" element={<TeamInvite />} />
               <Route path="new-team" element={<NewTeam />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="projects/:id" element={<ProjectDetail />} />
-              <Route path="projects/:projectId/board" element={<ProjectBoard />} />
+                          <Route path="projects" element={<Projects />} />
+            <Route path="projects/:id" element={<ProjectDetail />} />
+            <Route path="projects/:projectId/board" element={<ProjectBoard />} />
+            <Route path="projects/:projectId/invite" element={<ProjectInvite />} />
               <Route path="clients" element={<Clients />} />
               <Route path="reports" element={<Reports />} />
               <Route path="new-project" element={<NewProject />} />

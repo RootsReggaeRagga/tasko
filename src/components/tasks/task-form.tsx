@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 const formSchema = z.object({
   title: z.string().min(1, { message: "Task title is required" }),
   description: z.string().optional(),
-  status: z.enum(["todo", "in-progress", "testing", "reopen", "done"]),
+  status: z.enum(["todo", "in-progress", "testing", "reopen", "review", "done"]),
   priority: z.enum(["low", "medium", "high"]),
   projectId: z.string().min(1, { message: "Project is required" }),
   assigneeId: z.string().optional(),
@@ -170,6 +170,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
                     <SelectItem value="in-progress">In Progress</SelectItem>
                     <SelectItem value="testing">Testing</SelectItem>
                     <SelectItem value="reopen">Reopen</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
                     <SelectItem value="done">Done</SelectItem>
                   </SelectContent>
                 </Select>

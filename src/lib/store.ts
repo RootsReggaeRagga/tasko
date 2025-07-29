@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, Task, Team, Project, Client } from '@/types';
+import { User, Task, Team, Project, Client, Invitation } from '@/types';
 import { generateId } from '@/lib/utils';
 
 interface State {
@@ -9,6 +9,7 @@ interface State {
   teams: Team[];
   projects: Project[];
   clients: Client[];
+  invitations: Invitation[];
   currentUser: User | null;
   currentTeam: Team | null;
 }
@@ -45,6 +46,12 @@ interface Actions {
   
   // Theme actions
   setUserTheme: (userId: string, theme: 'light' | 'dark' | 'system') => void;
+  
+  // Invitation actions
+  createInvitation: (invitation: Omit<Invitation, 'id' | 'invitedAt' | 'expiresAt' | 'token'>) => void;
+  updateInvitation: (id: string, invitation: Partial<Invitation>) => void;
+  deleteInvitation: (id: string) => void;
+  acceptInvitation: (token: string) => void;
 }
 
 export const useAppStore = create<State & Actions>()(
@@ -55,6 +62,7 @@ export const useAppStore = create<State & Actions>()(
       teams: [],
       projects: [],
       clients: [],
+      invitations: [],
       currentUser: null,
       currentTeam: null,
 
@@ -233,6 +241,66 @@ export const useAppStore = create<State & Actions>()(
             ? { ...state.currentUser, theme }
             : state.currentUser
         })),
+
+      // Invitation actions
+      createInvitation: (invitation) => {
+        const token = generateId(); // Simple token generation
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+        
+        set((state) => ({
+          invitations: [...state.invitations, {
+            ...invitation,
+            id: generateId(),
+            invitedAt: new Date().toISOString(),
+            expiresAt,
+            token
+          }]
+        }));
+      },
+      updateInvitation: (id, invitation) =>
+        set((state) => ({
+          invitations: state.invitations.map((inv) => 
+            inv.id === id ? { ...inv, ...invitation } : inv
+          )
+        })),
+      deleteInvitation: (id) =>
+        set((state) => ({
+          invitations: state.invitations.filter((inv) => inv.id !== id)
+        })),
+      acceptInvitation: (token) =>
+        set((state) => {
+          const invitation = state.invitations.find(inv => inv.token === token);
+          if (!invitation || invitation.status !== 'pending') {
+            return state;
+          }
+
+          // Create new user from invitation
+          const newUser = {
+            id: generateId(),
+            name: invitation.name || invitation.email.split('@')[0],
+            email: invitation.email,
+            role: invitation.role,
+            theme: 'system' as const
+          };
+
+          // Add user to team if teamId is provided
+          let updatedTeams = state.teams;
+          if (invitation.teamId) {
+            updatedTeams = state.teams.map(team => 
+              team.id === invitation.teamId 
+                ? { ...team, members: [...team.members, newUser] }
+                : team
+            );
+          }
+
+          return {
+            users: [...state.users, newUser],
+            teams: updatedTeams,
+            invitations: state.invitations.map(inv => 
+              inv.token === token ? { ...inv, status: 'accepted' } : inv
+            )
+          };
+        }),
     }),
     {
       name: 'team-task-manager',

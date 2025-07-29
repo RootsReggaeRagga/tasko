@@ -67,3 +67,17 @@ export interface Client {
   createdAt: string;
   status: 'active' | 'inactive';
 }
+
+export interface Invitation {
+  id: string;
+  email: string;
+  name?: string;
+  teamId?: string;
+  projectId?: string;
+  role: 'admin' | 'member';
+  status: 'pending' | 'accepted' | 'expired';
+  invitedBy: string; // User ID who sent the invitation
+  invitedAt: string;
+  expiresAt: string;
+  token: string; // Unique token for invitation link
+}

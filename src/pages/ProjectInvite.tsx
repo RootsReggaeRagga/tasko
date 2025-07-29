@@ -2,19 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppStore } from "@/lib/store";
-import { ArrowLeft, Users, Mail } from "lucide-react";
+import { ArrowLeft, Users, Mail, FolderOpen } from "lucide-react";
 import { EmailInvitationForm } from "@/components/invitations/email-invitation-form";
 import { InvitationsList } from "@/components/invitations/invitations-list";
 import { ExistingUserInvite } from "@/components/invitations/existing-user-invite";
 
-export default function TeamInvite() {
+export default function ProjectInvite() {
   const navigate = useNavigate();
-  const { id: teamId } = useParams<{ id: string }>();
-  const { teams } = useAppStore();
+  const { projectId } = useParams<{ projectId: string }>();
+  const { projects, teams } = useAppStore();
   
-  const team = teams.find((t) => t.id === teamId);
+  const project = projects.find((p) => p.id === projectId);
+  const team = project ? teams.find((t) => t.id === project.teamId) : null;
   
-  if (!team) {
+  if (!project) {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
@@ -29,11 +30,11 @@ export default function TeamInvite() {
           </Button>
         </div>
         <div className="rounded-lg border bg-card p-8 text-center">
-          <h3 className="font-medium text-lg mb-2">Team not found</h3>
+          <h3 className="font-medium text-lg mb-2">Project not found</h3>
           <p className="text-muted-foreground mb-4">
-            The team you're looking for doesn't exist or has been deleted.
+            The project you're looking for doesn't exist or has been deleted.
           </p>
-          <Button onClick={() => navigate('/teams')}>View All Teams</Button>
+          <Button onClick={() => navigate('/projects')}>View All Projects</Button>
         </div>
       </div>
     );
@@ -54,10 +55,15 @@ export default function TeamInvite() {
       </div>
       
       <div>
-        <h2 className="text-2xl font-bold mb-2">Invite Members to {team.name}</h2>
+        <h2 className="text-2xl font-bold mb-2">Invite Members to {project.name}</h2>
         <p className="text-muted-foreground">
-          Invite new members to your team via email or add existing users
+          Invite new members to your project via email or add existing users
         </p>
+        {team && (
+          <p className="text-sm text-muted-foreground mt-1">
+            Team: {team.name}
+          </p>
+        )}
       </div>
 
       <Tabs defaultValue="email" className="space-y-6">
@@ -78,7 +84,8 @@ export default function TeamInvite() {
 
         <TabsContent value="email" className="space-y-6">
           <EmailInvitationForm 
-            teamId={teamId} 
+            teamId={project.teamId}
+            projectId={projectId} 
             onSuccess={() => {
               // Optionally refresh or show success message
             }}
@@ -87,7 +94,8 @@ export default function TeamInvite() {
 
         <TabsContent value="existing" className="space-y-6">
           <ExistingUserInvite 
-            teamId={teamId}
+            teamId={project.teamId}
+            projectId={projectId}
             onSuccess={() => {
               // Optionally refresh or show success message
             }}
@@ -95,7 +103,7 @@ export default function TeamInvite() {
         </TabsContent>
 
         <TabsContent value="invitations" className="space-y-6">
-          <InvitationsList teamId={teamId} />
+          <InvitationsList teamId={project.teamId} projectId={projectId} />
         </TabsContent>
       </Tabs>
     </div>
