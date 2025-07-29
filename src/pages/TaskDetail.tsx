@@ -110,11 +110,27 @@ export default function TaskDetail() {
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <TaskTimer taskId={task.id} />
-              {task.timeSpent && task.timeSpent > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Total time spent: {formatDuration(task.timeSpent)}
-                </div>
-              )}
+              
+
+              
+                              {(() => {
+                  // Calculate total time from timeTracking history
+                  const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
+                    return total + (record.duration || 0);
+                  }, 0) || 0;
+                  
+                  const hasTimeTracked = totalTimeFromHistory > 0 || (task.timeSpent !== undefined && task.timeSpent > 0);
+                  
+                  return hasTimeTracked ? (
+                    <div className="text-sm text-muted-foreground">
+                      Total time spent: {formatDuration(Math.max(totalTimeFromHistory, task.timeSpent || 0))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground bg-yellow-100 p-2 rounded">
+                      No time tracked yet
+                    </div>
+                  );
+                })()}
             </div>
             <div>
               <h3 className="font-medium mb-2">Description</h3>

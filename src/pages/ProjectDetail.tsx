@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatDate, getStatusColor } from "@/lib/utils";
+import { formatDate, getStatusColor, formatDuration } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft, Edit, Plus, Kanban, ListFilter } from "lucide-react";
@@ -186,11 +186,25 @@ export default function ProjectDetail() {
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">{task.title}</div>
                           <div className="text-sm text-muted-foreground line-clamp-1">
                             {task.description || "No description"}
                           </div>
+                          {(() => {
+                            // Calculate total time from timeTracking history
+                            const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
+                              return total + (record.duration || 0);
+                            }, 0) || 0;
+                            
+                            const hasTimeTracked = totalTimeFromHistory > 0 || (task.timeSpent !== undefined && task.timeSpent > 0);
+                            
+                            return hasTimeTracked && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                ⏱️ {formatDuration(Math.max(totalTimeFromHistory, task.timeSpent || 0))}
+                              </div>
+                            );
+                          })()}
                         </div>
                         <Badge className={getStatusColor(task.status)}>
                           {task.status.replace('-', ' ')}

@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAppStore } from "@/lib/store";
-import { formatDate, getInitials, getStatusColor, getPriorityColor, cn } from "@/lib/utils";
+import { formatDate, getInitials, getStatusColor, getPriorityColor, cn, formatDuration } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Task } from "@/types";
 import { MoreHorizontal, Plus, Search } from "lucide-react";
@@ -131,13 +131,14 @@ export function TaskList() {
               <TableHead>Priority</TableHead>
               <TableHead className="hidden md:table-cell">Due Date</TableHead>
               <TableHead className="hidden md:table-cell">Assignee</TableHead>
+              <TableHead className="hidden lg:table-cell">Total Time</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedTasks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No tasks found.
                 </TableCell>
               </TableRow>
@@ -199,6 +200,26 @@ export function TaskList() {
                       ) : (
                         "Unassigned"
                       )}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {(() => {
+                        // Calculate total time from timeTracking history
+                        const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
+                          return total + (record.duration || 0);
+                        }, 0) || 0;
+                        
+                        const hasTimeTracked = totalTimeFromHistory > 0 || (task.timeSpent !== undefined && task.timeSpent > 0);
+                        
+                        return hasTimeTracked ? (
+                          <div className="text-sm text-muted-foreground">
+                            ⏱️ {formatDuration(Math.max(totalTimeFromHistory, task.timeSpent || 0))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground bg-yellow-100 p-1 rounded">
+                            No time tracked
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
