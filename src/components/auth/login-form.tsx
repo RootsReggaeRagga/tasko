@@ -17,7 +17,8 @@ import { useAppStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { supabase, refreshSupabaseData, syncUserData, checkDatabaseStructure, syncCurrentUserToProfiles, getCurrentUserFromProfiles } from "@/lib/supabase";
+import { supabase, refreshSupabaseData, syncUserData, checkDatabaseStructure, syncCurrentUserToProfiles, getCurrentUserFromProfiles, checkTablePermissions } from "@/lib/supabase";
+import { generateId } from "@/lib/utils";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -47,6 +48,9 @@ export function LoginForm() {
     try {
       // Check database structure first
       await checkDatabaseStructure();
+      
+      // Check table permissions
+      await checkTablePermissions();
       
       // Refresh Supabase data to ensure fresh connection
       await refreshSupabaseData();
@@ -80,10 +84,26 @@ export function LoginForm() {
           
           // Sync new user to profiles table
           await syncCurrentUserToProfiles(user);
+          
+          // Create a default team for new user
+          const { addTeam } = useAppStore.getState();
+          const teamId = generateId();
+          const defaultTeam = {
+            name: `${user.name}'s Team`,
+            description: `Default team for ${user.name}`,
+            members: [user]
+          };
+          addTeam(defaultTeam);
+          
+          // Update user with team ID
+          user.teamId = teamId;
+          await syncCurrentUserToProfiles(user);
         }
 
         // Debug: sprawdź user object
         console.log('Login - user object:', user);
+        console.log('Login - user ID:', user.id);
+        console.log('Login - user teamId:', user.teamId);
 
         // Check if user already exists in store
         const existingUser = users.find(u => u.id === user.id);

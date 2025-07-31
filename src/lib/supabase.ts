@@ -288,4 +288,89 @@ export const checkDatabaseStructure = async () => {
   } catch (error) {
     console.error('Error checking database structure:', error);
   }
+};
+
+// Helper function to check table permissions
+export const checkTablePermissions = async () => {
+  try {
+    console.log('Checking table permissions...');
+    
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.log('No authenticated session found - testing as anonymous user');
+    } else {
+      console.log('Authenticated user:', session.user.id);
+    }
+    
+    // Test insert permissions
+    const testData = {
+      id: 'test-' + Date.now(),
+      name: 'Test Item',
+      created_at: new Date().toISOString()
+    };
+    
+    // Test tasks table
+    try {
+      const { error: tasksError } = await supabase
+        .from('tasks')
+        .insert(testData);
+      
+      if (tasksError) {
+        console.error('Tasks table insert permission error:', tasksError);
+        if (tasksError.code === '42501') {
+          console.error('Tasks table: RLS policy might be blocking insert');
+        }
+      } else {
+        console.log('Tasks table: INSERT permission OK');
+        // Clean up test data
+        await supabase.from('tasks').delete().eq('id', testData.id);
+      }
+    } catch (error) {
+      console.error('Tasks table: INSERT permission denied');
+    }
+    
+    // Test projects table
+    try {
+      const { error: projectsError } = await supabase
+        .from('projects')
+        .insert(testData);
+      
+      if (projectsError) {
+        console.error('Projects table insert permission error:', projectsError);
+        if (projectsError.code === '42501') {
+          console.error('Projects table: RLS policy might be blocking insert');
+        }
+      } else {
+        console.log('Projects table: INSERT permission OK');
+        // Clean up test data
+        await supabase.from('projects').delete().eq('id', testData.id);
+      }
+    } catch (error) {
+      console.error('Projects table: INSERT permission denied');
+    }
+    
+    // Test clients table
+    try {
+      const { error: clientsError } = await supabase
+        .from('clients')
+        .insert(testData);
+      
+      if (clientsError) {
+        console.error('Clients table insert permission error:', clientsError);
+        if (clientsError.code === '42501') {
+          console.error('Clients table: RLS policy might be blocking insert');
+        }
+      } else {
+        console.log('Clients table: INSERT permission OK');
+        // Clean up test data
+        await supabase.from('clients').delete().eq('id', testData.id);
+      }
+    } catch (error) {
+      console.error('Clients table: INSERT permission denied');
+    }
+    
+  } catch (error) {
+    console.error('Error checking table permissions:', error);
+  }
 }; 

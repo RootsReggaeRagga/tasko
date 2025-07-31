@@ -192,12 +192,37 @@ export const useAppStore = create<State & Actions>()(
 
       // Project actions
       addProject: async (project) => {
+        console.log('addProject called with:', project);
+        const currentUser = useAppStore.getState().currentUser;
+        console.log('Current user:', currentUser);
+        
+        if (!currentUser) {
+          console.error('No current user found! Cannot add project.');
+          return;
+        }
+        
+        if (!currentUser.id) {
+          console.error('Current user has no ID! Cannot add project.');
+          return;
+        }
+        
+        // Check if user is authenticated in Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.error('No Supabase session found! User not authenticated.');
+          return;
+        }
+        
+        console.log('Supabase session found:', session.user.id);
+        
         const newProject = { 
           ...project, 
           id: generateId(), 
           createdAt: new Date().toISOString(),
           tasks: [] // Initialize with an empty array of task IDs
         };
+        
+        console.log('New project object:', newProject);
         
         // Add to local store immediately
         set((state) => ({
@@ -206,20 +231,24 @@ export const useAppStore = create<State & Actions>()(
         
         // Sync to Supabase
         try {
+          const supabaseData = {
+            id: newProject.id,
+            name: newProject.name,
+            description: newProject.description,
+            client_id: newProject.clientId,
+            team_id: newProject.teamId,
+            category: newProject.category,
+            budget: newProject.budget,
+            hourly_rate: newProject.hourlyRate,
+            revenue: newProject.revenue,
+            created_at: newProject.createdAt
+          };
+          
+          console.log('Sending to Supabase:', supabaseData);
+          
           const { error } = await supabase
             .from('projects')
-            .insert({
-              id: newProject.id,
-              name: newProject.name,
-              description: newProject.description,
-              client_id: newProject.clientId,
-              team_id: newProject.teamId,
-              category: newProject.category,
-              budget: newProject.budget,
-              hourly_rate: newProject.hourlyRate,
-              revenue: newProject.revenue,
-              created_at: newProject.createdAt
-            });
+            .insert(supabaseData);
           
           if (error) {
             console.error('Error syncing project to Supabase:', error);
@@ -242,6 +271,36 @@ export const useAppStore = create<State & Actions>()(
 
       // Task actions
       addTask: async (task) => {
+        console.log('=== ADD TASK DEBUG ===');
+        console.log('addTask called with:', task);
+        const currentUser = useAppStore.getState().currentUser;
+        console.log('Current user:', currentUser);
+        
+        if (!currentUser) {
+          console.error('No current user found! Cannot add task.');
+          return;
+        }
+        
+        if (!currentUser.id) {
+          console.error('Current user has no ID! Cannot add task.');
+          return;
+        }
+        
+        // Check if user is authenticated in Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.error('No Supabase session found! User not authenticated.');
+          return;
+        }
+        
+        console.log('Supabase session found:', session.user.id);
+        
+        // Check if currentUser.id matches Supabase auth user
+        if (session.user.id !== currentUser.id) {
+          console.error('Current user ID mismatch! Local:', currentUser.id, 'Supabase:', session.user.id);
+          return;
+        }
+        
         const newTask = { 
           ...task, 
           id: generateId(), 
@@ -249,6 +308,8 @@ export const useAppStore = create<State & Actions>()(
           updatedAt: new Date().toISOString(),
           cost: task.hourlyRate && task.timeSpent ? calculateTaskCost(task.timeSpent, task.hourlyRate) : 0
         };
+        
+        console.log('New task object:', newTask);
         
         // Add to local store immediately
         set((state) => ({
@@ -262,36 +323,49 @@ export const useAppStore = create<State & Actions>()(
         
         // Sync to Supabase
         try {
-          const { error } = await supabase
+          const supabaseData = {
+            id: newTask.id,
+            title: newTask.title,
+            description: newTask.description,
+            status: newTask.status,
+            priority: newTask.priority,
+            assignee_id: newTask.assigneeId,
+            created_by_id: newTask.createdById,
+            project_id: newTask.projectId,
+            time_estimate: newTask.timeEstimate,
+            time_spent: newTask.timeSpent,
+            time_started: newTask.timeStarted,
+            hourly_rate: newTask.hourlyRate,
+            cost: newTask.cost,
+            due_date: newTask.dueDate,
+            created_at: newTask.createdAt,
+            updated_at: newTask.updatedAt,
+            tags: newTask.tags
+          };
+          
+          console.log('Sending to Supabase:', supabaseData);
+          
+          const { data, error } = await supabase
             .from('tasks')
-            .insert({
-              id: newTask.id,
-              title: newTask.title,
-              description: newTask.description,
-              status: newTask.status,
-              priority: newTask.priority,
-              assignee_id: newTask.assigneeId,
-              created_by_id: newTask.createdById,
-              project_id: newTask.projectId,
-              time_estimate: newTask.timeEstimate,
-              time_spent: newTask.timeSpent,
-              time_started: newTask.timeStarted,
-              hourly_rate: newTask.hourlyRate,
-              cost: newTask.cost,
-              due_date: newTask.dueDate,
-              created_at: newTask.createdAt,
-              updated_at: newTask.updatedAt,
-              tags: newTask.tags
-            });
+            .insert(supabaseData)
+            .select();
           
           if (error) {
             console.error('Error syncing task to Supabase:', error);
+            console.error('Error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
           } else {
             console.log('Task synced to Supabase successfully');
+            console.log('Returned data:', data);
           }
         } catch (error) {
           console.error('Error in addTask:', error);
         }
+        console.log('=== END ADD TASK DEBUG ===');
       },
       updateTask: (id, task) => {
         console.log("updateTask called:", { id, task });
@@ -336,11 +410,37 @@ export const useAppStore = create<State & Actions>()(
 
       // Client actions
       addClient: async (client) => {
+        console.log('=== ADD CLIENT DEBUG ===');
+        console.log('addClient called with:', client);
+        const currentUser = useAppStore.getState().currentUser;
+        console.log('Current user:', currentUser);
+        
+        if (!currentUser) {
+          console.error('No current user found! Cannot add client.');
+          return;
+        }
+        
+        if (!currentUser.id) {
+          console.error('Current user has no ID! Cannot add client.');
+          return;
+        }
+        
+        // Check if user is authenticated in Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.error('No Supabase session found! User not authenticated.');
+          return;
+        }
+        
+        console.log('Supabase session found:', session.user.id);
+        
         const newClient = { 
           ...client, 
           id: generateId(), 
           createdAt: new Date().toISOString()
         };
+        
+        console.log('New client object:', newClient);
         
         // Add to local store immediately
         set((state) => ({
@@ -349,29 +449,42 @@ export const useAppStore = create<State & Actions>()(
         
         // Sync to Supabase
         try {
-          const { error } = await supabase
+          const supabaseData = {
+            id: newClient.id,
+            name: newClient.name,
+            email: newClient.email,
+            phone: newClient.phone,
+            company: newClient.company,
+            avatar: newClient.avatar,
+            status: newClient.status,
+            created_by: newClient.createdBy,
+            team_id: newClient.teamId,
+            created_at: newClient.createdAt
+          };
+          
+          console.log('Sending to Supabase:', supabaseData);
+          
+          const { data, error } = await supabase
             .from('clients')
-            .insert({
-              id: newClient.id,
-              name: newClient.name,
-              email: newClient.email,
-              phone: newClient.phone,
-              company: newClient.company,
-              avatar: newClient.avatar,
-              status: newClient.status,
-              created_by: newClient.createdBy,
-              team_id: newClient.teamId,
-              created_at: newClient.createdAt
-            });
+            .insert(supabaseData)
+            .select();
           
           if (error) {
             console.error('Error syncing client to Supabase:', error);
+            console.error('Error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
           } else {
             console.log('Client synced to Supabase successfully');
+            console.log('Returned data:', data);
           }
         } catch (error) {
           console.error('Error in addClient:', error);
         }
+        console.log('=== END ADD CLIENT DEBUG ===');
       },
       updateClient: (id, client) =>
         set((state) => ({
