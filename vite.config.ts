@@ -11,9 +11,19 @@ export default defineConfig(({ mode }) => ({
     }),
     react(),
   ],
+  base: '/',
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
     },
   },
 }));

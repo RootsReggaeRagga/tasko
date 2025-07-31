@@ -16,13 +16,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAppStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { createClient } from '@supabase/supabase-js';
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-
-// Initialize Supabase client
-const supabaseUrl = 'https://wjefekwnlznwgnxxahxu.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZWZla3dubHpud2dueHhhaHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NjExOTUsImV4cCI6MjA2OTAzNzE5NX0.a0gmfaPlyrPN-V3ldgn7WMFoNZ-PFEsTN_ssygFHnp8';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase, refreshSupabaseData, syncUserData, checkDatabaseStructure } from "@/lib/supabase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -50,6 +45,12 @@ export function LoginForm() {
     setErrorMessage("");
 
     try {
+      // Check database structure first
+      await checkDatabaseStructure();
+      
+      // Refresh Supabase data to ensure fresh connection
+      await refreshSupabaseData();
+
       // Authenticate with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
@@ -61,6 +62,9 @@ export function LoginForm() {
       }
 
       if (data && data.user) {
+        // Sync user data from Supabase
+        const syncedUserData = await syncUserData(data.user.id);
+        
         // Get user profile data if needed
         const { data: userData } = await supabase
           .from('profiles')
@@ -83,6 +87,7 @@ export function LoginForm() {
         // Debug: sprawdź user object
         console.log('Login - created user object:', user);
         console.log('Login - userData from Supabase:', userData);
+        console.log('Login - synced user data:', syncedUserData);
 
         // Check if user already exists in store
         const existingUser = users.find(u => u.id === user.id);
@@ -92,6 +97,12 @@ export function LoginForm() {
           const { users } = useAppStore.getState();
           useAppStore.setState({
             users: [...users, user]
+          });
+        } else {
+          // Update existing user with fresh data
+          const { users } = useAppStore.getState();
+          useAppStore.setState({
+            users: users.map(u => u.id === user.id ? user : u)
           });
         }
 

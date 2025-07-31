@@ -6,6 +6,7 @@ export interface User {
   role: 'admin' | 'member';
   theme?: 'light' | 'dark' | 'system';
   hourlyRate?: number; // Hourly rate in PLN
+  teamId?: string; // Team the user belongs to
   createdAt?: string;
   updatedAt?: string;
 }
@@ -76,6 +77,8 @@ export interface Client {
   avatar?: string;
   createdAt: string;
   status: 'active' | 'inactive';
+  createdBy?: string; // User ID who created the client
+  teamId?: string; // Team the client belongs to
 }
 
 export interface Invitation {

@@ -6,14 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { createClient } from '@supabase/supabase-js';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAppStore } from "@/lib/store";
-
-// Initialize Supabase client
-const supabaseUrl = 'https://wjefekwnlznwgnxxahxu.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZWZla3dubHpud2dueHhhaHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NjExOTUsImV4cCI6MjA2OTAzNzE5NX0.a0gmfaPlyrPN-V3ldgn7WMFoNZ-PFEsTN_ssygFHnp8';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase, refreshSupabaseData } from '@/lib/supabase';
 
 export default function Register() {
   const navigate = useNavigate();

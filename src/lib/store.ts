@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Task, Team, Project, Client, Invitation } from '@/types';
 import { generateId, calculateTaskCost } from '@/lib/utils';
+import { supabase } from './supabase';
 
 interface State {
   users: User[];
@@ -32,19 +33,21 @@ interface Actions {
   removeMemberFromTeam: (teamId: string, userId: string) => void;
   
   // Project actions
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'tasks'>) => void;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'tasks'>) => Promise<void>;
   updateProject: (id: string, project: Partial<Project>) => void;
   deleteProject: (id: string) => void;
   
   // Task actions
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTask: (id: string, task: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   
   // Client actions
-  addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
+  addClient: (client: Omit<Client, 'id' | 'createdAt'>) => Promise<void>;
   updateClient: (id: string, client: Partial<Client>) => void;
   deleteClient: (id: string) => void;
+  
+
   
   // Theme actions
   setUserTheme: (userId: string, theme: 'light' | 'dark' | 'system') => void;
@@ -188,15 +191,45 @@ export const useAppStore = create<State & Actions>()(
         })),
 
       // Project actions
-      addProject: (project) => 
+      addProject: async (project) => {
+        const newProject = { 
+          ...project, 
+          id: generateId(), 
+          createdAt: new Date().toISOString(),
+          tasks: [] // Initialize with an empty array of task IDs
+        };
+        
+        // Add to local store immediately
         set((state) => ({
-          projects: [...state.projects, { 
-            ...project, 
-            id: generateId(), 
-            createdAt: new Date().toISOString(),
-            tasks: [] // Initialize with an empty array of task IDs
-          }]
-        })),
+          projects: [...state.projects, newProject]
+        }));
+        
+        // Sync to Supabase
+        try {
+          const { error } = await supabase
+            .from('projects')
+            .insert({
+              id: newProject.id,
+              name: newProject.name,
+              description: newProject.description,
+              client_id: newProject.clientId,
+              team_id: newProject.teamId,
+              category: newProject.category,
+              budget: newProject.budget,
+              hourly_rate: newProject.hourlyRate,
+              revenue: newProject.revenue,
+              created_at: newProject.createdAt
+            });
+          
+          if (error) {
+            console.error('Error syncing project to Supabase:', error);
+          } else {
+            console.log('Project synced to Supabase successfully');
+          }
+        } catch (error) {
+          console.error('Error in addProject:', error);
+        }
+      },
       updateProject: (id, project) =>
         set((state) => ({
           projects: state.projects.map((p) => (p.id === id ? { ...p, ...project } : p))
@@ -208,7 +241,7 @@ export const useAppStore = create<State & Actions>()(
         })),
 
       // Task actions
-      addTask: (task) => {
+      addTask: async (task) => {
         const newTask = { 
           ...task, 
           id: generateId(), 
@@ -217,6 +250,7 @@ export const useAppStore = create<State & Actions>()(
           cost: task.hourlyRate && task.timeSpent ? calculateTaskCost(task.timeSpent, task.hourlyRate) : 0
         };
         
+        // Add to local store immediately
         set((state) => ({
           tasks: [...state.tasks, newTask],
           projects: state.projects.map(project => 
@@ -225,6 +259,39 @@ export const useAppStore = create<State & Actions>()(
               : project
           )
         }));
+        
+        // Sync to Supabase
+        try {
+          const { error } = await supabase
+            .from('tasks')
+            .insert({
+              id: newTask.id,
+              title: newTask.title,
+              description: newTask.description,
+              status: newTask.status,
+              priority: newTask.priority,
+              assignee_id: newTask.assigneeId,
+              created_by_id: newTask.createdById,
+              project_id: newTask.projectId,
+              time_estimate: newTask.timeEstimate,
+              time_spent: newTask.timeSpent,
+              time_started: newTask.timeStarted,
+              hourly_rate: newTask.hourlyRate,
+              cost: newTask.cost,
+              due_date: newTask.dueDate,
+              created_at: newTask.createdAt,
+              updated_at: newTask.updatedAt,
+              tags: newTask.tags
+            });
+          
+          if (error) {
+            console.error('Error syncing task to Supabase:', error);
+          } else {
+            console.log('Task synced to Supabase successfully');
+          }
+        } catch (error) {
+          console.error('Error in addTask:', error);
+        }
       },
       updateTask: (id, task) => {
         console.log("updateTask called:", { id, task });
@@ -268,14 +335,44 @@ export const useAppStore = create<State & Actions>()(
         })),
 
       // Client actions
-      addClient: (client) => 
+      addClient: async (client) => {
+        const newClient = { 
+          ...client, 
+          id: generateId(), 
+          createdAt: new Date().toISOString()
+        };
+        
+        // Add to local store immediately
         set((state) => ({
-          clients: [...state.clients, { 
-            ...client, 
-            id: generateId(), 
-            createdAt: new Date().toISOString()
-          }]
-        })),
+          clients: [...state.clients, newClient]
+        }));
+        
+        // Sync to Supabase
+        try {
+          const { error } = await supabase
+            .from('clients')
+            .insert({
+              id: newClient.id,
+              name: newClient.name,
+              email: newClient.email,
+              phone: newClient.phone,
+              company: newClient.company,
+              avatar: newClient.avatar,
+              status: newClient.status,
+              created_by: newClient.createdBy,
+              team_id: newClient.teamId,
+              created_at: newClient.createdAt
+            });
+          
+          if (error) {
+            console.error('Error syncing client to Supabase:', error);
+          } else {
+            console.log('Client synced to Supabase successfully');
+          }
+        } catch (error) {
+          console.error('Error in addClient:', error);
+        }
+      },
       updateClient: (id, client) =>
         set((state) => ({
           clients: state.clients.map((c) => (c.id === id ? { ...c, ...client } : c))
@@ -361,6 +458,8 @@ export const useAppStore = create<State & Actions>()(
             )
           };
         }),
+
+
     }),
     {
       name: 'team-task-manager',
