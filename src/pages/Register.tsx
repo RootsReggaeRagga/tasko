@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAppStore } from "@/lib/store";
-import { supabase, refreshSupabaseData } from '@/lib/supabase';
+import { supabase, refreshSupabaseData, syncCurrentUserToProfiles } from '@/lib/supabase';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -54,6 +54,9 @@ export default function Register() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+
+      // Sync user to profiles table in Supabase
+      await syncCurrentUserToProfiles(user);
 
       // Add user to store
       addUser(user);

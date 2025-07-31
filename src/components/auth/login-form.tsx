@@ -17,7 +17,7 @@ import { useAppStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { supabase, refreshSupabaseData, syncUserData, checkDatabaseStructure } from "@/lib/supabase";
+import { supabase, refreshSupabaseData, syncUserData, checkDatabaseStructure, syncCurrentUserToProfiles, getCurrentUserFromProfiles } from "@/lib/supabase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -62,38 +62,34 @@ export function LoginForm() {
       }
 
       if (data && data.user) {
-        // Sync user data from Supabase
-        const syncedUserData = await syncUserData(data.user.id);
+        // Try to get existing user from profiles table first
+        let user = await getCurrentUserFromProfiles(data.user.id);
         
-        // Get user profile data if needed
-        const { data: userData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        // Create user object from authentication data
-        const user = {
-          id: data.user.id,
-          email: data.user.email || "",
-          name: userData?.name || data.user.email?.split('@')[0] || "User",
-          role: userData?.role || 'admin', // Domyślnie admin dla nowych użytkowników
-          theme: 'system' as const,
-          hourlyRate: 50, // Domyślna stawka godzinowa
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        if (!user) {
+          // User doesn't exist in profiles, create new user object
+          user = {
+            id: data.user.id,
+            email: data.user.email || "",
+            name: data.user.email?.split('@')[0] || "User",
+            role: 'admin', // Domyślnie admin dla nowych użytkowników
+            theme: 'system' as const,
+            hourlyRate: 50, // Domyślna stawka godzinowa
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          
+          // Sync new user to profiles table
+          await syncCurrentUserToProfiles(user);
+        }
 
         // Debug: sprawdź user object
-        console.log('Login - created user object:', user);
-        console.log('Login - userData from Supabase:', userData);
-        console.log('Login - synced user data:', syncedUserData);
+        console.log('Login - user object:', user);
 
         // Check if user already exists in store
         const existingUser = users.find(u => u.id === user.id);
         
         if (!existingUser) {
-          // Add user to store if not exists, but preserve the Supabase ID
+          // Add user to store if not exists
           const { users } = useAppStore.getState();
           useAppStore.setState({
             users: [...users, user]
