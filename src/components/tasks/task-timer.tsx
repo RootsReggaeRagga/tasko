@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Play, Pause, StopCircle, Timer } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Play, Pause, StopCircle, Timer, Edit, Trash2, X, Check } from "lucide-react";
 import { Task, TimeTrackingRecord } from "@/types";
 import { generateId } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
@@ -19,13 +21,48 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [editingSession, setEditingSession] = useState<TimeTrackingRecord | null>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editDuration, setEditDuration] = useState("");
 
   // Initialize from task
   useEffect(() => {
-    if (task?.timeSpent) {
-      setElapsedSeconds(Math.floor(task.timeSpent * 60)); // Convert minutes to seconds
+    // Clean up incomplete sessions (without endTime) on component mount
+    if (task?.timeTracking && task.timeTracking.length > 0) {
+      const incompleteSessions = task.timeTracking.filter(session => !session.endTime);
+      if (incompleteSessions.length > 0) {
+        console.log('Found incomplete sessions, cleaning up:', incompleteSessions);
+        // Remove incomplete sessions
+        const cleanTimeTracking = task.timeTracking.filter(session => session.endTime);
+        updateTask(taskId, {
+          timeTracking: cleanTimeTracking
+        });
+      }
     }
-  }, [task?.timeSpent]);
+    
+    // Calculate total time from timeTracking history (only completed sessions)
+    const totalTimeFromHistory = task?.timeTracking?.reduce((total, record) => {
+      // Only count sessions that have endTime (completed sessions)
+      if (record.endTime) {
+        return total + (record.duration || 0);
+      }
+      return total;
+    }, 0) || 0;
+    
+    console.log('Timer init - task:', task?.id);
+    console.log('Timer init - timeTracking:', task?.timeTracking);
+    console.log('Timer init - timeTracking details:', task?.timeTracking?.map(session => ({
+      id: session.id,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      duration: session.duration,
+      description: session.description
+    })));
+    console.log('Timer init - totalTimeFromHistory (minutes):', totalTimeFromHistory);
+    console.log('Timer init - setting elapsedSeconds to:', Math.floor(totalTimeFromHistory * 60));
+    
+    setElapsedSeconds(Math.floor(totalTimeFromHistory * 60)); // Convert minutes to seconds
+  }, [task?.timeTracking, taskId, updateTask]);
 
   // Simple timer effect
   useEffect(() => {
@@ -35,7 +72,17 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       interval = setInterval(() => {
         const now = Date.now();
         const sessionElapsed = Math.floor((now - sessionStartTime) / 1000);
-        const totalElapsed = Math.floor((task?.timeSpent || 0) * 60) + sessionElapsed;
+        
+        // Calculate total time from timeTracking history (only completed sessions)
+        const totalTimeFromHistory = task?.timeTracking?.reduce((total, record) => {
+          // Only count sessions that have endTime (completed sessions)
+          if (record.endTime) {
+            return total + (record.duration || 0);
+          }
+          return total;
+        }, 0) || 0;
+        
+        const totalElapsed = Math.floor(totalTimeFromHistory * 60) + sessionElapsed;
         setElapsedSeconds(totalElapsed);
       }, 1000);
     }
@@ -45,12 +92,14 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
         clearInterval(interval);
       }
     };
-  }, [isRunning, sessionStartTime, task?.timeSpent]);
+  }, [isRunning, sessionStartTime, task?.timeTracking]);
 
   const startTimer = useCallback(async () => {
     if (!task || !currentUser) return;
 
     console.log("Starting timer for task:", taskId);
+    console.log("Current task:", task);
+    console.log("Current user:", currentUser);
     
     const now = Date.now();
     setIsRunning(true);
@@ -64,21 +113,44 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       duration: 0
     };
 
+    console.log("Created new session:", newSession);
+    console.log("Current task.timeTracking:", task.timeTracking);
+    console.log("New timeTracking array:", [...(task.timeTracking || []), newSession]);
+
     // Update task
-    await updateTask(taskId, {
-      timeStarted: new Date(now).toISOString(),
-      timeTracking: [...(task.timeTracking || []), newSession]
-    });
+    try {
+      const updateData = {
+        timeStarted: new Date(now).toISOString(),
+        timeTracking: [...(task.timeTracking || []), newSession]
+      };
+      console.log("Sending update data:", updateData);
+      
+      await updateTask(taskId, updateData);
+      console.log("Timer started successfully");
+    } catch (error) {
+      console.error("Error starting timer:", error);
+    }
   }, [task, currentUser, taskId, updateTask]);
 
   const pauseTimer = useCallback(async () => {
     if (!task || !sessionStartTime) return;
 
     console.log("Pausing timer for task:", taskId);
+    console.log("Session start time:", sessionStartTime);
+    console.log("Current time:", Date.now());
     
     const now = Date.now();
     const sessionElapsed = (now - sessionStartTime) / (1000 * 60); // Convert to minutes
-    const totalTime = (task.timeSpent || 0) + sessionElapsed;
+    
+    // Calculate total time from timeTracking history (only completed sessions)
+    const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
+      // Only count sessions that have endTime (completed sessions)
+      if (record.endTime) {
+        return total + (record.duration || 0);
+      }
+      return total;
+    }, 0) || 0;
+    const totalTime = totalTimeFromHistory + sessionElapsed;
 
     setIsRunning(false);
     setSessionStartTime(null);
@@ -116,14 +188,25 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     if (!task || !sessionStartTime) return;
 
     console.log("Stopping timer for task:", taskId);
+    console.log("Session start time:", sessionStartTime);
+    console.log("Current time:", Date.now());
     
     const now = Date.now();
     const sessionElapsed = (now - sessionStartTime) / (1000 * 60); // Convert to minutes
-    const totalTime = (task.timeSpent || 0) + sessionElapsed;
+    
+    // Calculate total time from timeTracking history (only completed sessions)
+    const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
+      // Only count sessions that have endTime (completed sessions)
+      if (record.endTime) {
+        return total + (record.duration || 0);
+      }
+      return total;
+    }, 0) || 0;
+    const totalTime = totalTimeFromHistory + sessionElapsed;
 
     setIsRunning(false);
     setSessionStartTime(null);
-    setElapsedSeconds(0); // Reset display
+    setElapsedSeconds(0); // Reset display to 00:00
 
     // Find and update the current session
     const currentSession = task.timeTracking?.find(session => 
@@ -154,7 +237,112 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     }
   }, [task, sessionStartTime, taskId, updateTask]);
 
-  // Reset timer function removed - Stop now resets timer and saves to history
+  // Edit session function
+  const editSession = useCallback(async (sessionId: string, description: string, duration: number) => {
+    console.log("=== EDIT SESSION DEBUG ===");
+    console.log("editSession called with:", { sessionId, description, duration });
+    console.log("Current task:", task);
+    console.log("Current timeTracking:", task?.timeTracking);
+    
+    if (!task) {
+      console.error("No task found!");
+      return;
+    }
+
+    const updatedTimeTracking = task.timeTracking?.map(session => {
+      if (session.id === sessionId) {
+        console.log("Updating session:", session.id, "with description:", description, "duration:", duration);
+        return { ...session, description, duration };
+      }
+      return session;
+    }) || [];
+
+    console.log("Updated timeTracking:", updatedTimeTracking);
+
+    // Recalculate total time spent
+    const totalTimeSpent = updatedTimeTracking
+      .filter(session => session.endTime)
+      .reduce((total, session) => total + (session.duration || 0), 0);
+
+    console.log("Recalculated totalTimeSpent:", totalTimeSpent);
+
+    console.log("Calling updateTask with:", {
+      timeTracking: updatedTimeTracking,
+      timeSpent: Math.round(totalTimeSpent)
+    });
+
+    await updateTask(taskId, {
+      timeTracking: updatedTimeTracking,
+      timeSpent: Math.round(totalTimeSpent)
+    });
+
+    console.log("updateTask completed");
+    
+    // Add a small delay to ensure Supabase has processed the update
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    setEditingSession(null);
+    setEditDescription("");
+    setEditDuration("");
+    console.log("=== END EDIT SESSION DEBUG ===");
+  }, [task, taskId, updateTask]);
+
+  // Delete session function
+  const deleteSession = useCallback(async (sessionId: string) => {
+    console.log("=== DELETE SESSION DEBUG ===");
+    console.log("deleteSession called with sessionId:", sessionId);
+    console.log("Current task:", task);
+    console.log("Current timeTracking:", task?.timeTracking);
+    
+    if (!task) {
+      console.error("No task found!");
+      return;
+    }
+
+    const updatedTimeTracking = task.timeTracking?.filter(session => session.id !== sessionId) || [];
+    console.log("Updated timeTracking after deletion:", updatedTimeTracking);
+
+    // Recalculate total time spent
+    const totalTimeSpent = updatedTimeTracking
+      .filter(session => session.endTime)
+      .reduce((total, session) => total + (session.duration || 0), 0);
+
+    console.log("Recalculated totalTimeSpent:", totalTimeSpent);
+
+    console.log("Calling updateTask with:", {
+      timeTracking: updatedTimeTracking,
+      timeSpent: Math.round(totalTimeSpent)
+    });
+
+    await updateTask(taskId, {
+      timeTracking: updatedTimeTracking,
+      timeSpent: Math.round(totalTimeSpent)
+    });
+
+    console.log("updateTask completed");
+    
+    // Add a small delay to ensure Supabase has processed the update
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log("=== END DELETE SESSION DEBUG ===");
+  }, [task, taskId, updateTask]);
+
+  // Reset time tracking (for testing)
+  const resetTimeTracking = useCallback(async () => {
+    console.log('Resetting time tracking for task:', taskId);
+    await updateTask(taskId, {
+      timeTracking: [],
+      timeSpent: 0
+    });
+  }, [taskId, updateTask]);
+
+  // Open edit dialog
+  const openEditDialog = useCallback((session: TimeTrackingRecord) => {
+    setEditingSession(session);
+    setEditDescription(session.description || "");
+    // Format duration to 2 decimal places for better readability
+    setEditDuration(session.duration ? session.duration.toFixed(2) : "");
+  }, []);
 
   if (!task) {
     return null;
@@ -168,8 +356,18 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
             <Timer className="h-4 w-4" />
             <span className="font-medium">Time Tracking</span>
           </div>
-          <div className="text-xl font-mono">
-            {formatDuration(elapsedSeconds / 60)} {/* Convert seconds back to minutes for formatDuration */}
+          <div className="flex items-center gap-2">
+            <div className="text-xl font-mono">
+              {formatDuration(elapsedSeconds)}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetTimeTracking}
+              className="text-xs"
+            >
+              Reset
+            </Button>
           </div>
         </div>
 
@@ -226,26 +424,89 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
                 .filter(session => session.endTime) // Only show completed sessions
                 .sort((a, b) => new Date(b.endTime!).getTime() - new Date(a.endTime!).getTime()) // Sort by newest first
                 .map((session) => (
-                  <div key={session.id} className="flex justify-between items-center text-xs bg-muted/50 p-2 rounded">
-                    <div>
+                  <div key={session.id} className="flex justify-between items-center text-xs bg-muted/50 p-2 rounded group">
+                    <div className="flex-1">
                       <div className="font-medium">
                         {new Date(session.startTime).toLocaleDateString()} {new Date(session.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </div>
                       <div className="text-muted-foreground">
-                        Duration: {formatDuration(session.duration || 0)}
+                        Duration: {formatDuration(session.duration || 0)} ({session.duration?.toFixed(2) || '0.00'} min)
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">{formatDuration(session.duration || 0)}</div>
                       {session.description && (
-                        <div className="text-muted-foreground text-xs">{session.description}</div>
+                        <div className="text-muted-foreground text-xs mt-1">{session.description}</div>
                       )}
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => openEditDialog(session)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        onClick={() => deleteSession(session.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
             </div>
           </div>
         )}
+
+        {/* Edit Session Dialog */}
+        <Dialog open={!!editingSession} onOpenChange={() => setEditingSession(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Session</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <Input
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="What did you work on?"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Duration (minutes)</label>
+                <Input
+                  type="number"
+                  value={editDuration}
+                  onChange={(e) => setEditDuration(e.target.value)}
+                  placeholder="0"
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingSession(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (editingSession) {
+                      const duration = parseFloat(editDuration) || 0;
+                      editSession(editingSession.id, editDescription, duration);
+                    }
+                  }}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Card>
   );

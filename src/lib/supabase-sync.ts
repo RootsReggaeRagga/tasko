@@ -53,13 +53,13 @@ export const syncProjectsToSupabase = async () => {
           id: project.id,
           name: project.name,
           description: project.description,
-          client_id: project.clientId,
-          team_id: project.teamId,
+          client_id: project.client_id,
+          team_id: project.team_id,
           category: project.category,
           budget: project.budget,
-          hourly_rate: project.hourlyRate,
+          hourly_rate: project.hourly_rate,
           revenue: project.revenue,
-          created_at: project.createdAt
+          created_at: project.created_at
         }, { onConflict: 'id' });
 
       if (error) {
@@ -149,12 +149,13 @@ export const loadDataFromSupabase = async () => {
         name: project.name,
         description: project.description,
         status: project.status,
-        clientId: project.client_id,
-        teamId: project.team_id,
+        client_id: project.client_id,
+        team_id: project.team_id,
         budget: project.budget,
         startDate: project.start_date,
         endDate: project.end_date,
-        createdAt: project.created_at,
+        created_at: project.created_at,
+        created_by: project.created_by,
         tasks: []
       }));
       

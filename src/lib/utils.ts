@@ -30,11 +30,10 @@ export function formatDateTime(date: string | undefined) {
   });
 }
 
-export function formatDuration(minutes: number) {
-  if (minutes === undefined || minutes === null || minutes < 0) return "00:00";
+export function formatDuration(seconds: number) {
+  if (seconds === undefined || seconds === null || seconds < 0) return "00:00";
   
-  // Handle both integer minutes and floating point values
-  const totalSeconds = Math.floor(minutes * 60);
+  const totalSeconds = Math.floor(seconds);
   const hours = Math.floor(totalSeconds / 3600);
   const mins = Math.floor((totalSeconds % 3600) / 60);
   const secs = Math.floor(totalSeconds % 60);

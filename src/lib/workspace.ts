@@ -8,7 +8,7 @@ export const getTasksForUser = (userId: string): Task[] => {
     task.createdById === userId || 
     task.assigneeId === userId ||
     (state.currentUser?.teamId && task.projectId && 
-     state.projects.find(p => p.id === task.projectId)?.teamId === state.currentUser.teamId)
+     state.projects.find(p => p.id === task.projectId)?.team_id === state.currentUser.teamId)
   );
 };
 
@@ -16,8 +16,8 @@ export const getTasksForUser = (userId: string): Task[] => {
 export const getProjectsForUser = (userId: string): Project[] => {
   const state = useAppStore.getState();
   return state.projects.filter(project => 
-    project.teamId && 
-    state.teams.find(team => team.id === project.teamId)?.members.some(member => member.id === userId)
+    project.team_id && 
+    state.teams.find(team => team.id === project.team_id)?.members.some(member => member.id === userId)
   );
 };
 
@@ -35,14 +35,14 @@ export const getTasksForTeam = (teamId: string): Task[] => {
   const state = useAppStore.getState();
   return state.tasks.filter(task => 
     task.projectId && 
-    state.projects.find(p => p.id === task.projectId)?.teamId === teamId
+    state.projects.find(p => p.id === task.projectId)?.team_id === teamId
   );
 };
 
 // Get projects for a specific team
 export const getProjectsForTeam = (teamId: string): Project[] => {
   const state = useAppStore.getState();
-  return state.projects.filter(project => project.teamId === teamId);
+  return state.projects.filter(project => project.team_id === teamId);
 };
 
 // Get clients for a specific team
@@ -82,7 +82,7 @@ export const hasAccessToResource = (userId: string, resourceType: 'task' | 'proj
       
     case 'project':
       const project = state.projects.find(p => p.id === resourceId);
-      return project ? state.teams.find(team => team.id === project.teamId)?.members.some(member => member.id === userId) || false : false;
+      return project ? state.teams.find(team => team.id === project.team_id)?.members.some(member => member.id === userId) || false : false;
       
     case 'client':
       const client = state.clients.find(c => c.id === resourceId);

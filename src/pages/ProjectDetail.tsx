@@ -223,7 +223,7 @@ export default function ProjectDetail() {
                             
                             return hasTimeTracked && (
                               <div className="text-xs text-muted-foreground mt-1">
-                                ⏱️ {formatDuration(Math.max(totalTimeFromHistory, task.timeSpent || 0))}
+                                ⏱️ {formatDuration(totalTimeFromHistory)}
                               </div>
                             );
                           })()}

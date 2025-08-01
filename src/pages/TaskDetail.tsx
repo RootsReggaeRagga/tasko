@@ -124,7 +124,7 @@ export default function TaskDetail() {
                   
                   return hasTimeTracked ? (
                     <div className="text-sm text-muted-foreground">
-                      Total time spent: {formatDuration(Math.max(totalTimeFromHistory, task.timeSpent || 0))}
+                      Total time spent: {formatDuration(totalTimeFromHistory)}
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground bg-yellow-100 p-2 rounded">

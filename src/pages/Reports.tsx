@@ -41,7 +41,7 @@ export default function Reports() {
   // Time tracking statistics
   const totalTimeSpent = tasks.reduce((total, task) => {
     const timeFromHistory = task.timeTracking?.reduce((sum, record) => sum + (record.duration || 0), 0) || 0;
-    return total + Math.max(timeFromHistory, task.timeSpent || 0);
+    return total + timeFromHistory;
   }, 0);
 
   const averageTimePerTask = totalTasks > 0 ? totalTimeSpent / totalTasks : 0;
@@ -69,7 +69,7 @@ export default function Reports() {
   // Project financial analysis
   const projectFinancials = projects.map(project => {
     const projectTasks = tasks.filter(t => t.projectId === project.id);
-    const { totalCost, totalTime, averageHourlyRate } = calculateProjectCosts(projectTasks, project.hourlyRate);
+    const { totalCost, totalTime, averageHourlyRate } = calculateProjectCosts(projectTasks, project.hourly_rate);
     const projectRevenue = project.revenue || 0;
     const projectProfit = projectRevenue - totalCost;
     
@@ -121,7 +121,7 @@ export default function Reports() {
     const userTasks = tasks.filter(t => t.assigneeId === user.id);
     const totalTime = userTasks.reduce((total, task) => {
       const timeFromHistory = task.timeTracking?.reduce((sum, record) => sum + (record.duration || 0), 0) || 0;
-      return total + Math.max(timeFromHistory, task.timeSpent || 0);
+      return total + timeFromHistory;
     }, 0);
     
     return {
@@ -210,9 +210,9 @@ export default function Reports() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatDuration(totalTimeSpent)}</div>
+            <div className="text-2xl font-bold">{formatDuration(totalTimeSpent * 60)}</div>
             <p className="text-xs text-muted-foreground">
-              Avg: {formatDuration(averageTimePerTask)} per task
+                              Avg: {formatDuration(averageTimePerTask * 60)} per task
             </p>
           </CardContent>
         </Card>
@@ -264,7 +264,7 @@ export default function Reports() {
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{formatCurrency(totalCosts)}</div>
             <p className="text-xs text-muted-foreground">
-              {formatDuration(totalTimeSpent)} of work
+              {formatDuration(totalTimeSpent * 60)} of work
             </p>
           </CardContent>
         </Card>
@@ -584,10 +584,10 @@ export default function Reports() {
             <CardContent>
               <div className="space-y-3">
                 {clients.map((client) => {
-                  const clientProjects = projects.filter(p => p.clientId === client.id);
+                  const clientProjects = projects.filter(p => p.client_id === client.id);
                   const clientTasks = tasks.filter(t => {
                     const project = projects.find(p => p.id === t.projectId);
-                    return project?.clientId === client.id;
+                    return project?.client_id === client.id;
                   });
                   const completedTasks = clientTasks.filter(t => t.status === 'done').length;
                   

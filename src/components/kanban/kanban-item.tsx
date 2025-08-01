@@ -63,11 +63,20 @@ export function KanbanItem({ task, users, onDragStart, onDragEnd }: KanbanItemPr
           )}
 
           {/* Time tracking */}
-          {task.timeSpent && task.timeSpent > 0 && (
-            <div className="text-xs text-muted-foreground">
-              ⏱️ {formatDuration(task.timeSpent)}
-            </div>
-          )}
+          {(() => {
+            // Calculate total time from timeTracking history
+            const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
+              return total + (record.duration || 0);
+            }, 0) || 0;
+            
+            const hasTimeTracked = totalTimeFromHistory > 0 || (task.timeSpent !== undefined && task.timeSpent > 0);
+            
+            return hasTimeTracked ? (
+              <div className="text-xs text-muted-foreground">
+                ⏱️ {formatDuration(totalTimeFromHistory)}
+              </div>
+            ) : null;
+          })()}
 
           {/* Due date */}
           {task.dueDate && (

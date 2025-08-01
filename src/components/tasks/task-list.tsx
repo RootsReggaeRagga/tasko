@@ -212,7 +212,7 @@ export function TaskList() {
                         
                         return hasTimeTracked ? (
                           <div className="text-sm text-muted-foreground">
-                            ⏱️ {formatDuration(Math.max(totalTimeFromHistory, task.timeSpent || 0))}
+                            ⏱️ {formatDuration(totalTimeFromHistory)}
                           </div>
                         ) : (
                           <div className="text-sm text-muted-foreground bg-yellow-100 p-1 rounded">

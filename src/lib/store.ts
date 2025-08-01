@@ -79,6 +79,12 @@ export const useAppStore = create<State & Actions>()(
       setLoading: (loading) => set({ isLoading: loading }),
       
       loadDataFromSupabase: async () => {
+        const state = get();
+        if (state.isLoading) {
+          console.log('Data loading already in progress, skipping');
+          return;
+        }
+        
         const { setLoading } = get();
         setLoading(true);
         
@@ -179,7 +185,11 @@ export const useAppStore = create<State & Actions>()(
               timeEstimate: task.time_estimate,
               timeSpent: task.time_spent,
               timeStarted: task.time_started,
-              timeTracking: task.time_tracking,
+              timeTracking: (() => {
+                console.log('Loading time_tracking from Supabase for task:', task.id);
+                console.log('Raw time_tracking data:', task.time_tracking);
+                return task.time_tracking;
+              })(),
               hourlyRate: task.hourly_rate,
               cost: task.cost,
               dueDate: task.due_date,
@@ -188,7 +198,9 @@ export const useAppStore = create<State & Actions>()(
               tags: task.tags
             })) || [];
             
-            set({ tasks });
+            console.log('Setting tasks in store:', tasks.length, 'tasks');
+            console.log('Sample task timeTracking:', tasks[0]?.timeTracking);
+            set((state) => ({ ...state, tasks }));
           }
 
           // Load projects for current user's team
@@ -218,7 +230,7 @@ export const useAppStore = create<State & Actions>()(
                 tasks: [] // We'll populate this separately
               })) || [];
               
-              set({ projects });
+              set((state) => ({ ...state, projects }));
             }
           }
 
@@ -247,7 +259,7 @@ export const useAppStore = create<State & Actions>()(
                 createdAt: client.created_at
               })) || [];
               
-              set({ clients });
+              set((state) => ({ ...state, clients }));
             }
           }
 
@@ -558,6 +570,8 @@ export const useAppStore = create<State & Actions>()(
       updateTask: async (id, task) => {
         console.log("=== UPDATE TASK DEBUG ===");
         console.log("updateTask called:", { id, task });
+        console.log("task.timeTracking:", task.timeTracking);
+        console.log("task.timeStarted:", task.timeStarted);
         
         const currentUser = useAppStore.getState().currentUser;
         if (!currentUser?.id) {
@@ -610,9 +624,14 @@ export const useAppStore = create<State & Actions>()(
           if (task.dueDate !== undefined) supabaseData.due_date = task.dueDate;
           if (task.tags !== undefined) supabaseData.tags = task.tags;
           if (task.timeEstimate !== undefined) supabaseData.time_estimate = task.timeEstimate;
-          if (task.timeSpent !== undefined) supabaseData.time_spent = task.timeSpent;
+          if (task.timeSpent !== undefined) supabaseData.time_spent = Math.round(task.timeSpent);
           if (task.timeStarted !== undefined) supabaseData.time_started = task.timeStarted;
-          if (task.timeTracking !== undefined) supabaseData.time_tracking = task.timeTracking;
+          if (task.timeTracking !== undefined) {
+            console.log('Setting time_tracking in Supabase:', task.timeTracking);
+            console.log('timeTracking type:', typeof task.timeTracking);
+            console.log('timeTracking length:', Array.isArray(task.timeTracking) ? task.timeTracking.length : 'not array');
+            supabaseData.time_tracking = task.timeTracking;
+          }
           if (task.hourlyRate !== undefined) supabaseData.hourly_rate = task.hourlyRate;
           if (task.cost !== undefined) supabaseData.cost = task.cost;
 
