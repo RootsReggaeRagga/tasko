@@ -105,7 +105,7 @@ export function LoginForm() {
           
           // Create a default team for new user
           const { addTeam } = useAppStore.getState();
-          const teamId = generateId();
+          const teamId = crypto.randomUUID();
           const defaultTeam = {
             name: `${user.name}'s Team`,
             description: `Default team for ${user.name}`,

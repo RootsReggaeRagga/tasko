@@ -179,6 +179,7 @@ export const useAppStore = create<State & Actions>()(
               timeEstimate: task.time_estimate,
               timeSpent: task.time_spent,
               timeStarted: task.time_started,
+              timeTracking: task.time_tracking,
               hourlyRate: task.hourly_rate,
               cost: task.cost,
               dueDate: task.due_date,
@@ -262,7 +263,7 @@ export const useAppStore = create<State & Actions>()(
         set((state) => ({
           users: [...state.users, { 
             ...user, 
-            id: generateId(),
+            id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }]
@@ -329,7 +330,7 @@ export const useAppStore = create<State & Actions>()(
         set((state) => ({
           teams: [...state.teams, { 
             ...team, 
-            id: generateId(), 
+            id: crypto.randomUUID(), 
             createdAt: new Date().toISOString() 
           }]
         })),
@@ -500,6 +501,7 @@ export const useAppStore = create<State & Actions>()(
             time_estimate: newTask.timeEstimate,
             time_spent: newTask.timeSpent,
             time_started: newTask.timeStarted,
+            time_tracking: newTask.timeTracking,
             hourly_rate: newTask.hourlyRate,
             cost: newTask.cost,
             due_date: newTask.dueDate,

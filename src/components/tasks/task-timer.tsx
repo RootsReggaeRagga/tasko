@@ -58,7 +58,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
 
     // Create new session
     const newSession: TimeTrackingRecord = {
-      id: generateId(),
+      id: crypto.randomUUID(),
       userId: currentUser.id,
       startTime: new Date(now).toISOString(),
       duration: 0
@@ -137,10 +137,10 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
         duration: sessionElapsed
       };
 
-      // Update task with session and reset timeSpent
+      // Update task with session and accumulated timeSpent
       await updateTask(taskId, {
         timeStarted: undefined,
-        timeSpent: 0, // Reset timeSpent
+        timeSpent: totalTime, // Keep accumulated time
         timeTracking: task.timeTracking?.map(session => 
           session.id === currentSession.id ? updatedSession : session
         ) || [updatedSession]
@@ -149,7 +149,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       // Fallback
       await updateTask(taskId, {
         timeStarted: undefined,
-        timeSpent: 0 // Reset timeSpent
+        timeSpent: totalTime // Keep accumulated time
       });
     }
   }, [task, sessionStartTime, taskId, updateTask]);
@@ -214,6 +214,36 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
             <span>
               Remaining: {formatDuration(Math.max(0, task.timeEstimate - (elapsedSeconds / 60)))}
             </span>
+          </div>
+        )}
+
+        {/* Time Tracking History */}
+        {task.timeTracking && task.timeTracking.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">Session History</h4>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {task.timeTracking
+                .filter(session => session.endTime) // Only show completed sessions
+                .sort((a, b) => new Date(b.endTime!).getTime() - new Date(a.endTime!).getTime()) // Sort by newest first
+                .map((session) => (
+                  <div key={session.id} className="flex justify-between items-center text-xs bg-muted/50 p-2 rounded">
+                    <div>
+                      <div className="font-medium">
+                        {new Date(session.startTime).toLocaleDateString()} {new Date(session.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </div>
+                      <div className="text-muted-foreground">
+                        Duration: {formatDuration(session.duration || 0)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">{formatDuration(session.duration || 0)}</div>
+                      {session.description && (
+                        <div className="text-muted-foreground text-xs">{session.description}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         )}
       </div>

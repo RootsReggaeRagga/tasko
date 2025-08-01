@@ -50,7 +50,7 @@ export function ThemeToggle() {
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 {getThemeIcon()}
                 <span className="sr-only">Toggle theme</span>
