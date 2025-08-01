@@ -123,7 +123,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
   // Get team members for the selected project
   const selectedProjectId = form.watch("projectId");
   const selectedProject = projects.find(p => p.id === selectedProjectId);
-  const selectedTeam = teams.find(t => t.id === selectedProject?.teamId);
+      const selectedTeam = teams.find(t => t.id === selectedProject?.team_id);
   const teamMembers = selectedTeam?.members || [];
 
   return (

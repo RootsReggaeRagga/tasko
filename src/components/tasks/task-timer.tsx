@@ -47,7 +47,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     };
   }, [isRunning, sessionStartTime, task?.timeSpent]);
 
-  const startTimer = useCallback(() => {
+  const startTimer = useCallback(async () => {
     if (!task || !currentUser) return;
 
     console.log("Starting timer for task:", taskId);
@@ -65,13 +65,13 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     };
 
     // Update task
-    updateTask(taskId, {
+    await updateTask(taskId, {
       timeStarted: new Date(now).toISOString(),
       timeTracking: [...(task.timeTracking || []), newSession]
     });
   }, [task, currentUser, taskId, updateTask]);
 
-  const pauseTimer = useCallback(() => {
+  const pauseTimer = useCallback(async () => {
     if (!task || !sessionStartTime) return;
 
     console.log("Pausing timer for task:", taskId);
@@ -96,7 +96,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       };
 
       // Update task
-      updateTask(taskId, {
+      await updateTask(taskId, {
         timeStarted: undefined,
         timeSpent: totalTime,
         timeTracking: task.timeTracking?.map(session => 
@@ -105,14 +105,14 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       });
     } else {
       // Fallback
-      updateTask(taskId, {
+      await updateTask(taskId, {
         timeStarted: undefined,
         timeSpent: totalTime
       });
     }
   }, [task, sessionStartTime, taskId, updateTask]);
 
-  const stopTimer = useCallback(() => {
+  const stopTimer = useCallback(async () => {
     if (!task || !sessionStartTime) return;
 
     console.log("Stopping timer for task:", taskId);
@@ -138,7 +138,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       };
 
       // Update task with session and reset timeSpent
-      updateTask(taskId, {
+      await updateTask(taskId, {
         timeStarted: undefined,
         timeSpent: 0, // Reset timeSpent
         timeTracking: task.timeTracking?.map(session => 
@@ -147,7 +147,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       });
     } else {
       // Fallback
-      updateTask(taskId, {
+      await updateTask(taskId, {
         timeStarted: undefined,
         timeSpent: 0 // Reset timeSpent
       });

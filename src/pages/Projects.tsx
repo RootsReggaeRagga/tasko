@@ -52,11 +52,11 @@ export default function Projects() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {
-            const team = teams.find(t => t.id === project.teamId);
-            const client = clients.find(c => c.id === project.clientId);
+            const team = teams.find(t => t.id === project.team_id);
+            const client = clients.find(c => c.id === project.client_id);
             const projectTasks = tasks.filter(t => t.projectId === project.id);
             const completedTasks = projectTasks.filter(t => t.status === 'done').length;
-            const { totalCost, totalTime } = calculateProjectCosts(projectTasks, project.hourlyRate);
+            const { totalCost, totalTime } = calculateProjectCosts(projectTasks, project.hourly_rate);
             
             return (
               <Card key={project.id} className="overflow-hidden">
@@ -79,7 +79,7 @@ export default function Projects() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-muted-foreground">
-                        Created on {formatDate(project.createdAt)}
+                        Created on {formatDate(project.created_at)}
                       </div>
                       <Badge variant="outline">
                         {completedTasks}/{project.tasks.length} tasks

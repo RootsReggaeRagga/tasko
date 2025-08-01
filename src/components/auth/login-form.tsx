@@ -17,7 +17,7 @@ import { useAppStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { supabase, refreshSupabaseData, syncUserData, checkDatabaseStructure, syncCurrentUserToProfiles, getCurrentUserFromProfiles, checkTablePermissions } from "@/lib/supabase";
+import { supabase, refreshSupabaseData, syncUserData, checkDatabaseStructure, syncCurrentUserToProfiles, getCurrentUserFromProfiles, checkTablePermissions, checkTableStructure, testInsertOperations, getTableStructure, checkAndFixProfilesTable, addMissingColumnsToProfiles, checkAndCreateTeamsTable, checkTasksTableStructure } from "@/lib/supabase";
 import { generateId } from "@/lib/utils";
 
 const formSchema = z.object({
@@ -48,6 +48,24 @@ export function LoginForm() {
     try {
       // Check database structure first
       await checkDatabaseStructure();
+      
+      // Add missing columns to profiles table
+      await addMissingColumnsToProfiles();
+      
+      // Check teams table
+      await checkAndCreateTeamsTable();
+      
+      // Check tasks table structure
+      await checkTasksTableStructure();
+      
+      // Get exact table structure
+      await getTableStructure();
+      
+      // Check table structure
+      await checkTableStructure();
+      
+      // Test INSERT operations
+      await testInsertOperations();
       
       // Check table permissions
       await checkTablePermissions();
@@ -124,6 +142,9 @@ export function LoginForm() {
 
         // Set current user in app state
         setCurrentUser(user);
+        
+        // Check and fix profiles table structure
+        await checkAndFixProfilesTable();
         
         // Load data from Supabase
         const { loadDataFromSupabase } = useAppStore.getState();

@@ -51,7 +51,7 @@ export function TeamCard({ team }: TeamCardProps) {
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
                   onClick={() => {
-                    const teamProjects = projects.filter(p => p.teamId === team.id);
+                    const teamProjects = projects.filter(p => p.team_id === team.id);
                     if (teamProjects.length > 0) {
                       toast({
                         title: "Cannot delete team",

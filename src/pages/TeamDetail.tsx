@@ -40,7 +40,7 @@ export default function TeamDetail() {
     );
   }
 
-  const teamProjects = projects.filter((p) => p.teamId === team.id);
+      const teamProjects = projects.filter((p) => p.team_id === team.id);
 
   return (
     <div className="space-y-6">
@@ -78,7 +78,7 @@ export default function TeamDetail() {
             variant="destructive"
             className="gap-1"
             onClick={() => {
-              const teamProjects = projects.filter(p => p.teamId === team.id);
+              const teamProjects = projects.filter(p => p.team_id === team.id);
               if (teamProjects.length > 0) {
                 alert(`Cannot delete team. This team has ${teamProjects.length} project(s). Please delete or reassign projects first.`);
                 return;

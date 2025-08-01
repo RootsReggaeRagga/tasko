@@ -39,8 +39,8 @@ export default function ProjectDetail() {
     );
   }
 
-  const team = teams.find(t => t.id === project.teamId);
-  const client = clients.find(c => c.id === project.clientId);
+  const team = teams.find(t => t.id === project.team_id);
+  const client = clients.find(c => c.id === project.client_id);
   // Get tasks associated with this project by filtering the tasks array
   const projectTasks = tasks.filter(t => t.projectId === project.id);
   
@@ -100,7 +100,7 @@ export default function ProjectDetail() {
             <div>
               <h2 className="text-2xl font-bold">{project.name}</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                Created on {formatDate(project.createdAt)}
+                Created on {formatDate(project.created_at)}
               </p>
             </div>
             <div className="flex gap-2">

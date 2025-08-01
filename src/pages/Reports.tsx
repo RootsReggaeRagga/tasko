@@ -550,7 +550,7 @@ export default function Reports() {
                 {teams.map((team) => {
                   const teamTasks = tasks.filter(t => {
                     const project = projects.find(p => p.id === t.projectId);
-                    return project?.teamId === team.id;
+                    return project?.team_id === team.id;
                   });
                   const completedTasks = teamTasks.filter(t => t.status === 'done').length;
                   

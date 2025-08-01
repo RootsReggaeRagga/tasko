@@ -46,7 +46,7 @@ export default function Clients() {
   });
 
   const getClientProjects = (clientId: string) => {
-    return projects.filter(project => project.clientId === clientId);
+    return projects.filter(project => project.client_id === clientId);
   };
 
   const getStatusColor = (status: string) => {

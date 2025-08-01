@@ -57,14 +57,15 @@ export interface Project {
   id: string;
   name: string;
   description: string;
-  teamId: string;
-  clientId?: string; // Optional client ID
+  team_id: string; // Changed from teamId to team_id to match Supabase
+  client_id?: string; // Changed from clientId to client_id to match Supabase
   category?: 'web-development' | 'mobile-app' | 'design' | 'marketing' | 'seo' | 'ecommerce' | 'consulting';
-  createdAt: string;
+  created_at: string; // Changed from createdAt to created_at to match Supabase
+  created_by: string; // Added to match Supabase schema
   tasks: string[]; // Array of task IDs
   // Financial fields
   budget?: number; // Project budget in PLN
-  hourlyRate?: number; // Default hourly rate for project tasks
+  hourly_rate?: number; // Changed from hourlyRate to hourly_rate to match Supabase
   revenue?: number; // Project revenue in PLN
 }
 

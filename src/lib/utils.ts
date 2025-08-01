@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generateId() {
-  return Math.random().toString(36).substring(2, 10);
+  return crypto.randomUUID();
 }
 
 export function formatDate(date: string | undefined) {
