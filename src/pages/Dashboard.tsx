@@ -4,10 +4,18 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/lib/store";
 import { PlusCircle } from "lucide-react";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { currentUser, teams, projects } = useAppStore();
+  const { currentUser, teams, projects, loadDataFromSupabase } = useAppStore();
+
+  // Load data from Supabase when component mounts
+  useEffect(() => {
+    if (currentUser) {
+      loadDataFromSupabase();
+    }
+  }, [currentUser, loadDataFromSupabase]);
 
   const hasTeam = teams.length > 0;
   const hasProject = projects.length > 0;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,9 +22,16 @@ import { formatDate, getInitials } from "@/lib/utils";
 
 export default function Clients() {
   const navigate = useNavigate();
-  const { projects, clients } = useAppStore();
+  const { projects, clients, currentUser, loadDataFromSupabase } = useAppStore();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Load data from Supabase when component mounts
+  useEffect(() => {
+    if (currentUser) {
+      loadDataFromSupabase();
+    }
+  }, [currentUser, loadDataFromSupabase]);
 
   // Filter clients based on search and status
   const filteredClients = clients.filter(client => {

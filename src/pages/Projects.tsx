@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
 import { formatDate, formatCurrency, calculateProjectCosts } from "@/lib/utils";
+import { useEffect } from "react";
 
 const formatCategory = (category: string) => {
   return category
@@ -15,7 +16,14 @@ import { useNavigate } from "react-router-dom";
 
 export default function Projects() {
   const navigate = useNavigate();
-  const { projects, teams, clients, tasks } = useAppStore();
+  const { projects, teams, clients, tasks, currentUser, loadDataFromSupabase } = useAppStore();
+
+  // Load data from Supabase when component mounts
+  useEffect(() => {
+    if (currentUser) {
+      loadDataFromSupabase();
+    }
+  }, [currentUser, loadDataFromSupabase]);
 
   return (
     <div className="space-y-6">

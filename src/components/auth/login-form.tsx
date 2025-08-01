@@ -125,6 +125,10 @@ export function LoginForm() {
         // Set current user in app state
         setCurrentUser(user);
         
+        // Load data from Supabase
+        const { loadDataFromSupabase } = useAppStore.getState();
+        await loadDataFromSupabase();
+        
         toast({
           title: "Login successful",
           description: `Welcome back, ${user.name}!`,

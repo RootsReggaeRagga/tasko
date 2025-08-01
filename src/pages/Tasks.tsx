@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { List, Trello } from "lucide-react";
 import { TaskList } from "@/components/tasks/task-list";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { useAppStore } from "@/lib/store";
 
 type ViewMode = "list" | "kanban";
 
 export default function Tasks() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const { currentUser, loadDataFromSupabase } = useAppStore();
+
+  // Load data from Supabase when component mounts
+  useEffect(() => {
+    if (currentUser) {
+      loadDataFromSupabase();
+    }
+  }, [currentUser, loadDataFromSupabase]);
 
   return (
     <div className="space-y-6">
