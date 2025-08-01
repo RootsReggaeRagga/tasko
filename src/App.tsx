@@ -22,6 +22,7 @@ import Clients from '@/pages/Clients';
 import Reports from '@/pages/Reports';
 import Users from '@/pages/Users';
 import NewProject from '@/pages/NewProject';
+import EditProject from '@/pages/EditProject';
 import NewClient from '@/pages/NewClient';
 import ProjectDetail from '@/pages/ProjectDetail';
 import ProjectBoard from '@/pages/ProjectBoard';
@@ -55,6 +56,7 @@ const AppContent = () => {
               <Route path="new-team" element={<NewTeam />} />
                           <Route path="projects" element={<Projects />} />
             <Route path="projects/:id" element={<ProjectDetail />} />
+            <Route path="projects/:id/edit" element={<EditProject />} />
             <Route path="projects/:projectId/board" element={<ProjectBoard />} />
             <Route path="projects/:projectId/invite" element={<ProjectInvite />} />
               <Route path="clients" element={<Clients />} />

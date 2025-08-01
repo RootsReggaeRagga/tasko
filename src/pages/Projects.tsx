@@ -58,6 +58,19 @@ export default function Projects() {
             const completedTasks = projectTasks.filter(t => t.status === 'done').length;
             const { totalCost, totalTime } = calculateProjectCosts(projectTasks, project.hourly_rate);
             
+            // Debug logging
+            console.log(`Project ${project.name}:`, {
+              projectId: project.id,
+              teamId: project.team_id,
+              team: team,
+              teamsCount: teams.length,
+              teams: teams.map(t => ({ id: t.id, name: t.name })),
+              teamFound: teams.find(t => t.id === project.team_id)
+            });
+            console.log('All teams:', teams);
+            console.log('Looking for team with ID:', project.team_id);
+            console.log('Team found:', teams.find(t => t.id === project.team_id));
+            
             return (
               <Card key={project.id} className="overflow-hidden">
                 <CardHeader>

@@ -934,3 +934,67 @@ export const checkAndFixProjectsTable = async () => {
     console.error('Error in checkAndFixProjectsTable:', error);
   }
 }; 
+
+// Helper function to check and add missing columns to teams table
+export const checkAndFixTeamsTable = async () => {
+  try {
+    console.log('=== CHECKING AND FIXING TEAMS TABLE ===');
+    
+    // Try to access teams table
+    const { data: teamsData, error: teamsError } = await supabase
+      .from('teams')
+      .select('*')
+      .limit(1);
+    
+    if (teamsError) {
+      console.error('Teams table error:', teamsError);
+      if (teamsError.code === '42P01') {
+        console.error('Teams table does not exist!');
+        console.error('You need to create the teams table in Supabase.');
+        console.error('SQL to create teams table:');
+        console.error(`
+CREATE TABLE public.teams (
+  id uuid NOT NULL,
+  name text NOT NULL,
+  description text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT teams_pkey PRIMARY KEY (id)
+);
+        `);
+      }
+      return;
+    }
+    
+    console.log('Teams table exists and is accessible');
+    console.log('Sample teams data:', teamsData);
+    
+    // Check if required columns exist by trying to select them
+    const requiredColumns = ['id', 'name', 'description', 'created_at'];
+    
+    for (const column of requiredColumns) {
+      try {
+        const { error: columnError } = await supabase
+          .from('teams')
+          .select(column)
+          .limit(1);
+        
+        if (columnError) {
+          console.error(`Column ${column} is missing from teams table`);
+          console.error(`SQL to add column ${column}:`);
+          
+          if (column === 'description') {
+            console.error(`ALTER TABLE public.teams ADD COLUMN description text;`);
+          }
+        } else {
+          console.log(`Column ${column} exists in teams table`);
+        }
+      } catch (error) {
+        console.error(`Error checking column ${column}:`, error);
+      }
+    }
+    
+    console.log('=== END TEAMS TABLE CHECK ===');
+  } catch (error) {
+    console.error('Error in checkAndFixTeamsTable:', error);
+  }
+}; 

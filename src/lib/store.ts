@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Task, Team, Project, Client, Invitation } from '@/types';
 import { generateId, calculateTaskCost } from '@/lib/utils';
-import { supabase, checkAndCreateProjectsTable, checkAndFixProjectsTable } from './supabase';
+import { supabase, checkAndCreateProjectsTable, checkAndFixProjectsTable, checkAndFixTeamsTable } from './supabase';
 
 interface State {
   users: User[];
@@ -35,7 +35,7 @@ interface Actions {
   
   // Project actions
   addProject: (project: Omit<Project, 'id' | 'created_at' | 'created_by' | 'team_id' | 'tasks'>) => Promise<void>;
-  updateProject: (id: string, project: Partial<Project>) => void;
+  updateProject: (id: string, project: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => void;
   
   // Task actions
@@ -102,6 +102,9 @@ export const useAppStore = create<State & Actions>()(
           
           // Check and fix projects table structure
           await checkAndFixProjectsTable();
+          
+          // Check and fix teams table structure
+          await checkAndFixTeamsTable();
 
           // Load current user data (including theme) from profiles
           const { data: userData, error: userError } = await supabase
@@ -159,6 +162,26 @@ export const useAppStore = create<State & Actions>()(
                 }]
               }));
               
+              // Save team to Supabase
+              try {
+                const { error: teamError } = await supabase
+                  .from('teams')
+                  .insert([{
+                    id: teamId,
+                    name: defaultTeam.name,
+                    description: defaultTeam.description,
+                    created_at: new Date().toISOString()
+                  }]);
+                
+                if (teamError) {
+                  console.error('Error saving team to Supabase:', teamError);
+                } else {
+                  console.log('Team saved to Supabase successfully');
+                }
+              } catch (error) {
+                console.error('Exception saving team to Supabase:', error);
+              }
+              
               // Update current user with teamId
               const userWithTeam = { ...updatedUser, teamId };
               set({ currentUser: userWithTeam });
@@ -207,6 +230,27 @@ export const useAppStore = create<State & Actions>()(
             console.log('Setting tasks in store:', tasks.length, 'tasks');
             console.log('Sample task timeTracking:', tasks[0]?.timeTracking);
             set((state) => ({ ...state, tasks }));
+          }
+
+          // Load teams for current user
+          const { data: teamsData, error: teamsError } = await supabase
+            .from('teams')
+            .select('*');
+
+          if (teamsError) {
+            console.error('Error loading teams:', teamsError);
+          } else {
+            console.log('Loaded teams from Supabase:', teamsData?.length || 0);
+            // Map Supabase data to Team interface
+            const teams = teamsData?.map(team => ({
+              id: team.id,
+              name: team.name,
+              description: team.description,
+              members: [], // We'll populate members separately
+              createdAt: team.created_at
+            })) || [];
+            
+            set((state) => ({ ...state, teams }));
           }
 
           // Load projects for current user's team
@@ -465,10 +509,53 @@ export const useAppStore = create<State & Actions>()(
           console.error('Exception adding project:', error);
         }
       },
-      updateProject: (id, project) =>
+      updateProject: async (id, project) => {
+        console.log('=== UPDATING PROJECT ===');
+        console.log('Project ID:', id);
+        console.log('Project updates:', project);
+        
+        // Update local store immediately
         set((state) => ({
           projects: state.projects.map((p) => (p.id === id ? { ...p, ...project } : p))
-        })),
+        }));
+
+        // Sync to Supabase
+        try {
+          const supabaseData: any = {};
+
+          // Map project fields to Supabase column names
+          if (project.name !== undefined) supabaseData.name = project.name;
+          if (project.description !== undefined) supabaseData.description = project.description;
+          if (project.team_id !== undefined) supabaseData.team_id = project.team_id;
+          if (project.client_id !== undefined) supabaseData.client_id = project.client_id;
+          if (project.category !== undefined) supabaseData.category = project.category;
+          if (project.budget !== undefined) supabaseData.budget = project.budget;
+          if (project.hourly_rate !== undefined) supabaseData.hourly_rate = project.hourly_rate;
+          if (project.revenue !== undefined) supabaseData.revenue = project.revenue;
+
+          console.log('Sending project update to Supabase:', supabaseData);
+
+          const { data, error } = await supabase
+            .from('projects')
+            .update(supabaseData)
+            .eq('id', id)
+            .select();
+
+          if (error) {
+            console.error('Error updating project in Supabase:', error);
+            console.error('Error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
+          } else {
+            console.log('Project updated in Supabase successfully:', data);
+          }
+        } catch (error) {
+          console.error('Exception updating project in Supabase:', error);
+        }
+      },
       deleteProject: (id) =>
         set((state) => ({
           projects: state.projects.filter((p) => p.id !== id),
