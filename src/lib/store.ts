@@ -52,7 +52,7 @@ interface Actions {
   setLoading: (loading: boolean) => void;
   
   // Theme actions
-  setUserTheme: (userId: string, theme: 'light' | 'dark' | 'system') => void;
+  setUserTheme: (userId: string, theme: 'light' | 'dark' | 'system') => Promise<void>;
   
   // Invitation actions
   createInvitation: (invitation: Omit<Invitation, 'id' | 'invitedAt' | 'expiresAt' | 'token'>) => void;
@@ -87,6 +87,35 @@ export const useAppStore = create<State & Actions>((set, get) => ({
       }
 
       console.log('Loading data from Supabase for user:', currentUser.id);
+
+      // Load current user data (including theme) from profiles
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (userError) {
+        console.error('Error loading user data:', userError);
+      } else {
+        console.log('Loaded user data from Supabase:', userData);
+        // Update current user with fresh data from Supabase
+        const updatedUser = {
+          ...currentUser,
+          name: userData.name,
+          email: userData.email,
+          avatar: userData.avatar,
+          role: userData.role,
+          theme: userData.theme,
+          hourlyRate: userData.hourly_rate,
+          teamId: userData.team_id,
+          createdAt: userData.created_at,
+          updatedAt: userData.updated_at
+        };
+        
+        set({ currentUser: updatedUser });
+        console.log('Updated current user with theme:', updatedUser.theme);
+      }
 
       // Load tasks for current user
       const { data: tasksData, error: tasksError } = await supabase
@@ -619,7 +648,11 @@ export const useAppStore = create<State & Actions>((set, get) => ({
     })),
 
   // Theme actions
-  setUserTheme: (userId, theme) =>
+  setUserTheme: async (userId, theme) => {
+    console.log('=== SET USER THEME DEBUG ===');
+    console.log('setUserTheme called with:', { userId, theme });
+    
+    // Update local store immediately
     set((state) => ({
       users: state.users.map((user) => 
         user.id === userId ? { ...user, theme } : user
@@ -627,7 +660,42 @@ export const useAppStore = create<State & Actions>((set, get) => ({
       currentUser: state.currentUser?.id === userId 
         ? { ...state.currentUser, theme }
         : state.currentUser
-    })),
+    }));
+    
+    // Sync to Supabase
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('No Supabase session found! Cannot update theme.');
+        return;
+      }
+      
+      console.log('Updating theme in Supabase for user:', userId);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          theme: theme,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error updating theme in Supabase:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+      } else {
+        console.log('Theme updated in Supabase successfully');
+      }
+    } catch (error) {
+      console.error('Error in setUserTheme:', error);
+    }
+    console.log('=== END SET USER THEME DEBUG ===');
+  },
 
   // Invitation actions
   createInvitation: (invitation) => {

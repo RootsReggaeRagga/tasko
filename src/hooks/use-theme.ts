@@ -38,9 +38,9 @@ export function useTheme() {
     }
   }, [theme]);
 
-  const setTheme = (newTheme: 'light' | 'dark' | 'system') => {
+  const setTheme = async (newTheme: 'light' | 'dark' | 'system') => {
     if (currentUser) {
-      setUserTheme(currentUser.id, newTheme);
+      await setUserTheme(currentUser.id, newTheme);
     }
   };
 
