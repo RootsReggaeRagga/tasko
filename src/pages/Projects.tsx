@@ -82,7 +82,7 @@ export default function Projects() {
                         Created on {formatDate(project.created_at)}
                       </div>
                       <Badge variant="outline">
-                        {completedTasks}/{project.tasks.length} tasks
+                        {completedTasks}/{projectTasks.length} tasks
                       </Badge>
                     </div>
                     {(project.budget || project.revenue || totalCost > 0) && (

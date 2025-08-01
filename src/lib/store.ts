@@ -233,7 +233,7 @@ export const useAppStore = create<State & Actions>()(
                 revenue: project.revenue,
                 created_at: project.created_at,
                 created_by: project.created_by,
-                tasks: [] // We'll populate this separately
+                tasks: project.tasks || [] // Use tasks from Supabase
               })) || [];
               
               set((state) => ({ ...state, projects }));
@@ -626,13 +626,41 @@ export const useAppStore = create<State & Actions>()(
           const updatedTask = updatedTasks.find(t => t.id === id);
           console.log("Updated task locally:", updatedTask);
           
+          // Update projects tasks arrays when projectId changes
+          let updatedProjects = state.projects;
+          if (task.projectId !== undefined && updatedTask) {
+            const oldProjectId = updatedTask.projectId;
+            const newProjectId = task.projectId;
+            
+            if (oldProjectId !== newProjectId) {
+              console.log(`Moving task ${id} from project ${oldProjectId} to ${newProjectId}`);
+              
+              updatedProjects = state.projects.map(project => {
+                if (project.id === oldProjectId) {
+                  // Remove task from old project
+                  return {
+                    ...project,
+                    tasks: Array.isArray(project.tasks) 
+                      ? project.tasks.filter(taskId => taskId !== id)
+                      : []
+                  };
+                } else if (project.id === newProjectId) {
+                  // Add task to new project
+                  return {
+                    ...project,
+                    tasks: Array.isArray(project.tasks) 
+                      ? [...project.tasks, id]
+                      : [id]
+                  };
+                }
+                return project;
+              });
+            }
+          }
+          
           return {
             tasks: updatedTasks,
-            // Only keep task IDs in the projects array
-            projects: state.projects.map(project => ({
-              ...project,
-              tasks: Array.isArray(project.tasks) ? project.tasks : []
-            }))
+            projects: updatedProjects
           };
         });
 
@@ -683,6 +711,44 @@ export const useAppStore = create<State & Actions>()(
             console.error('Supabase data sent:', supabaseData);
           } else {
             console.log('Task updated in Supabase successfully:', data);
+            
+            // If projectId changed, update the projects table in Supabase
+            if (task.projectId !== undefined) {
+              const currentTask = get().tasks.find(t => t.id === id);
+              if (currentTask && currentTask.projectId !== task.projectId) {
+                console.log('Updating projects table in Supabase due to projectId change');
+                
+                // Update old project - remove task
+                if (currentTask.projectId) {
+                  const oldProject = get().projects.find(p => p.id === currentTask.projectId);
+                  if (oldProject) {
+                    const updatedOldProjectTasks = oldProject.tasks.filter(taskId => taskId !== id);
+                    const { error: oldProjectError } = await supabase
+                      .from('projects')
+                      .update({ tasks: updatedOldProjectTasks })
+                      .eq('id', currentTask.projectId);
+                    
+                    if (oldProjectError) {
+                      console.error('Error updating old project in Supabase:', oldProjectError);
+                    }
+                  }
+                }
+                
+                // Update new project - add task
+                const newProject = get().projects.find(p => p.id === task.projectId);
+                if (newProject) {
+                  const updatedNewProjectTasks = [...newProject.tasks, id];
+                  const { error: newProjectError } = await supabase
+                    .from('projects')
+                    .update({ tasks: updatedNewProjectTasks })
+                    .eq('id', task.projectId);
+                  
+                  if (newProjectError) {
+                    console.error('Error updating new project in Supabase:', newProjectError);
+                  }
+                }
+              }
+            }
           }
         } catch (error) {
           console.error('Exception updating task in Supabase:', error);
