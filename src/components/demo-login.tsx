@@ -3,6 +3,7 @@ import { useAppStore } from "@/lib/store";
 import { generateId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase, syncCurrentUserToProfiles } from "@/lib/supabase";
 
 export function DemoLogin() {
   const { setCurrentUser } = useAppStore();

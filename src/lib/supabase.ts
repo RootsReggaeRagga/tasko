@@ -827,3 +827,110 @@ CREATE TABLE public.tasks (
     console.error('Error in checkTasksTableStructure:', error);
   }
 }; 
+
+// Helper function to check if projects table exists and create it if needed
+export const checkAndCreateProjectsTable = async () => {
+  try {
+    console.log('=== CHECKING PROJECTS TABLE ===');
+    
+    // Try to access projects table
+    const { data: projectsData, error: projectsError } = await supabase
+      .from('projects')
+      .select('*')
+      .limit(1);
+    
+    if (projectsError) {
+      console.error('Projects table error:', projectsError);
+      if (projectsError.code === '42P01') {
+        console.error('Projects table does not exist!');
+        console.error('You need to create the projects table in Supabase.');
+        console.error('SQL to create projects table:');
+        console.error(`
+CREATE TABLE public.projects (
+  id uuid NOT NULL,
+  name text NOT NULL,
+  description text,
+  team_id uuid NOT NULL,
+  client_id uuid,
+  category text,
+  created_at timestamp without time zone DEFAULT now(),
+  created_by uuid NOT NULL,
+  tasks text[],
+  budget numeric,
+  hourly_rate numeric,
+  revenue numeric,
+  CONSTRAINT projects_pkey PRIMARY KEY (id)
+);
+        `);
+      }
+    } else {
+      console.log('Projects table exists and is accessible');
+      console.log('Sample projects data:', projectsData);
+    }
+    
+    console.log('=== END PROJECTS TABLE CHECK ===');
+  } catch (error) {
+    console.error('Error in checkAndCreateProjectsTable:', error);
+  }
+}; 
+
+// Helper function to check and add missing columns to projects table
+export const checkAndFixProjectsTable = async () => {
+  try {
+    console.log('=== CHECKING AND FIXING PROJECTS TABLE ===');
+    
+    // Try to access projects table
+    const { data: projectsData, error: projectsError } = await supabase
+      .from('projects')
+      .select('*')
+      .limit(1);
+    
+    if (projectsError) {
+      console.error('Projects table error:', projectsError);
+      return;
+    }
+    
+    console.log('Projects table exists and is accessible');
+    
+    // Check if required columns exist by trying to select them
+    const requiredColumns = [
+      'id', 'name', 'description', 'team_id', 'client_id', 
+      'category', 'created_at', 'created_by', 'tasks', 
+      'budget', 'hourly_rate', 'revenue'
+    ];
+    
+    for (const column of requiredColumns) {
+      try {
+        const { error: columnError } = await supabase
+          .from('projects')
+          .select(column)
+          .limit(1);
+        
+        if (columnError) {
+          console.error(`Column ${column} is missing from projects table`);
+          console.error(`SQL to add column ${column}:`);
+          
+          if (column === 'created_by') {
+            console.error(`ALTER TABLE public.projects ADD COLUMN created_by uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';`);
+          } else if (column === 'tasks') {
+            console.error(`ALTER TABLE public.projects ADD COLUMN tasks text[] DEFAULT '{}';`);
+          } else if (column === 'budget') {
+            console.error(`ALTER TABLE public.projects ADD COLUMN budget numeric;`);
+          } else if (column === 'hourly_rate') {
+            console.error(`ALTER TABLE public.projects ADD COLUMN hourly_rate numeric;`);
+          } else if (column === 'revenue') {
+            console.error(`ALTER TABLE public.projects ADD COLUMN revenue numeric;`);
+          }
+        } else {
+          console.log(`Column ${column} exists in projects table`);
+        }
+      } catch (error) {
+        console.error(`Error checking column ${column}:`, error);
+      }
+    }
+    
+    console.log('=== END PROJECTS TABLE CHECK ===');
+  } catch (error) {
+    console.error('Error in checkAndFixProjectsTable:', error);
+  }
+}; 

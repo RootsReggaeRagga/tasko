@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Task, Team, Project, Client, Invitation } from '@/types';
 import { generateId, calculateTaskCost } from '@/lib/utils';
-import { supabase } from './supabase';
+import { supabase, checkAndCreateProjectsTable, checkAndFixProjectsTable } from './supabase';
 
 interface State {
   users: User[];
@@ -96,6 +96,12 @@ export const useAppStore = create<State & Actions>()(
           }
 
           console.log('Loading data from Supabase for user:', currentUser.id);
+
+          // Check if projects table exists
+          await checkAndCreateProjectsTable();
+          
+          // Check and fix projects table structure
+          await checkAndFixProjectsTable();
 
           // Load current user data (including theme) from profiles
           const { data: userData, error: userError } = await supabase
@@ -401,13 +407,35 @@ export const useAppStore = create<State & Actions>()(
           return;
         }
 
+        // Check if user is authenticated in Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.error('No Supabase session found! User not authenticated.');
+          return;
+        }
+        
+        console.log('Supabase session found:', session.user.id);
+        
+        // Check if currentUser.id matches Supabase auth user
+        if (session.user.id !== get().currentUser!.id) {
+          console.error('Current user ID mismatch! Local:', get().currentUser!.id, 'Supabase:', session.user.id);
+          return;
+        }
+
+        // Create project object with correct field names for Supabase
         const newProject: Project = {
-          ...project,
           id: crypto.randomUUID(),
+          name: project.name,
+          description: project.description,
+          team_id: get().currentUser!.teamId || crypto.randomUUID(),
+          client_id: (project as any).clientId,
+          category: (project as any).category,
           created_by: get().currentUser!.id,
-          team_id: get().currentUser!.teamId || crypto.randomUUID(), // Use existing teamId or create new one
           created_at: new Date().toISOString(),
-          tasks: [], // Initialize empty tasks array
+          tasks: [],
+          budget: (project as any).budget,
+          hourly_rate: (project as any).hourlyRate,
+          revenue: (project as any).revenue,
         };
 
         console.log('New project with IDs:', newProject);
