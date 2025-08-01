@@ -25,16 +25,18 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
   const [editDescription, setEditDescription] = useState("");
   const [editDuration, setEditDuration] = useState("");
   const [isReset, setIsReset] = useState(false);
+  const [skipHistoryUpdate, setSkipHistoryUpdate] = useState(false);
 
   // Initialize from task
   useEffect(() => {
     console.log('=== TIMER INIT EFFECT TRIGGERED ===');
     console.log('task?.timeTracking changed:', task?.timeTracking);
     console.log('isReset:', isReset);
+    console.log('skipHistoryUpdate:', skipHistoryUpdate);
     
     // Don't update elapsedSeconds if reset was just performed
-    if (isReset) {
-      console.log('Skipping elapsedSeconds update due to reset');
+    if (isReset || skipHistoryUpdate) {
+      console.log('Skipping elapsedSeconds update due to reset or skipHistoryUpdate');
       setIsReset(false);
       return;
     }
@@ -87,8 +89,8 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
         // When timer is running, show only current session time
         setElapsedSeconds(sessionElapsed);
       }, 1000);
-    } else {
-      // Timer is not running - set total time from history
+    } else if (!isRunning && !sessionStartTime) {
+      // Timer is not running and no active session - set total time from history
       const totalTimeFromHistory = task?.timeTracking?.reduce((total, record) => {
         // Only count sessions that have endTime (completed sessions)
         if (record.endTime) {
@@ -99,6 +101,8 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       
       setElapsedSeconds(Math.floor(totalTimeFromHistory * 60));
     }
+    // If timer is not running but sessionStartTime exists, don't update elapsedSeconds
+    // (this happens during pause/stop operations)
 
     return () => {
       if (interval) {
@@ -121,6 +125,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     const now = Date.now();
     setIsRunning(true);
     setSessionStartTime(now);
+    setSkipHistoryUpdate(false); // Allow history updates again
 
     // Create new session
     const newSession: TimeTrackingRecord = {
@@ -226,8 +231,11 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     }, 0) || 0;
     
     // If reset was performed, don't add previous history
-    const totalTime = isReset ? sessionElapsed : totalTimeFromHistory + sessionElapsed;
+    // Also, if this is a new session after reset, don't add previous history
+    const isNewSessionAfterReset = skipHistoryUpdate && sessionElapsed > 0;
+    const totalTime = (isReset || isNewSessionAfterReset) ? sessionElapsed : totalTimeFromHistory + sessionElapsed;
     console.log('totalTimeFromHistory:', totalTimeFromHistory);
+    console.log('isNewSessionAfterReset:', isNewSessionAfterReset);
     console.log('totalTime (final):', totalTime);
 
     setIsRunning(false);
@@ -363,6 +371,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     setSessionStartTime(null);
     setElapsedSeconds(0);
     setIsReset(true); // Set reset flag
+    setSkipHistoryUpdate(true); // Skip history updates until next timer start
     
     // Clear any incomplete sessions
     if (task?.timeTracking) {
