@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Task, Team, Project, Client, Invitation } from '@/types';
 import { generateId, calculateTaskCost } from '@/lib/utils';
-import { supabase, checkAndCreateProjectsTable, checkAndFixProjectsTable, checkAndFixTeamsTable } from './supabase';
+import { supabase, checkAndCreateProjectsTable, checkAndFixProjectsTable, checkAndFixTeamsTable, checkAndFixTasksTable } from './supabase';
 
 interface State {
   users: User[];
@@ -105,6 +105,9 @@ export const useAppStore = create<State & Actions>()(
           
           // Check and fix teams table structure
           await checkAndFixTeamsTable();
+          
+          // Check and fix tasks table structure
+          await checkAndFixTasksTable();
 
           // Load current user data (including theme) from profiles
           const { data: userData, error: userError } = await supabase
@@ -217,7 +220,18 @@ export const useAppStore = create<State & Actions>()(
               timeTracking: (() => {
                 console.log('Loading time_tracking from Supabase for task:', task.id);
                 console.log('Raw time_tracking data:', task.time_tracking);
-                return task.time_tracking;
+                console.log('time_tracking type:', typeof task.time_tracking);
+                console.log('time_tracking is array:', Array.isArray(task.time_tracking));
+                if (Array.isArray(task.time_tracking)) {
+                  console.log('time_tracking length:', task.time_tracking.length);
+                  console.log('time_tracking items:', task.time_tracking.map(item => ({
+                    id: item.id,
+                    startTime: item.startTime,
+                    endTime: item.endTime,
+                    duration: item.duration
+                  })));
+                }
+                return task.time_tracking || [];
               })(),
               hourlyRate: task.hourly_rate,
               cost: task.cost,

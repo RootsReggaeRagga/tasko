@@ -117,14 +117,18 @@ export default function TaskDetail() {
                               {(() => {
                   // Calculate total time from timeTracking history
                   const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
-                    return total + (record.duration || 0);
+                    // Only count sessions that have endTime (completed sessions)
+                    if (record.endTime) {
+                      return total + (record.duration || 0);
+                    }
+                    return total;
                   }, 0) || 0;
                   
                   const hasTimeTracked = totalTimeFromHistory > 0 || (task.timeSpent !== undefined && task.timeSpent > 0);
                   
                   return hasTimeTracked ? (
                     <div className="text-sm text-muted-foreground">
-                      Total time spent: {formatDuration(totalTimeFromHistory)}
+                      Total time spent: {formatDuration(totalTimeFromHistory * 60)}
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground bg-yellow-100 p-2 rounded">

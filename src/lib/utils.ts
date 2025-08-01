@@ -31,18 +31,14 @@ export function formatDateTime(date: string | undefined) {
 }
 
 export function formatDuration(seconds: number) {
-  if (seconds === undefined || seconds === null || seconds < 0) return "00:00";
+  if (seconds === undefined || seconds === null || seconds < 0) return "00:00:00";
   
   const totalSeconds = Math.floor(seconds);
   const hours = Math.floor(totalSeconds / 3600);
   const mins = Math.floor((totalSeconds % 3600) / 60);
   const secs = Math.floor(totalSeconds % 60);
   
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  } else {
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 export function getInitials(name: string) {

@@ -998,3 +998,98 @@ CREATE TABLE public.teams (
     console.error('Error in checkAndFixTeamsTable:', error);
   }
 }; 
+
+// Helper function to check and add missing columns to tasks table
+export const checkAndFixTasksTable = async () => {
+  try {
+    console.log('=== CHECKING AND FIXING TASKS TABLE ===');
+    
+    // Try to access tasks table
+    const { data: tasksData, error: tasksError } = await supabase
+      .from('tasks')
+      .select('*')
+      .limit(1);
+    
+    if (tasksError) {
+      console.error('Tasks table error:', tasksError);
+      if (tasksError.code === '42P01') {
+        console.error('Tasks table does not exist!');
+        console.error('You need to create the tasks table in Supabase.');
+        console.error('SQL to create tasks table:');
+        console.error(`
+CREATE TABLE public.tasks (
+  id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  status text NOT NULL,
+  priority text NOT NULL,
+  assignee_id uuid,
+  created_by_id uuid NOT NULL,
+  project_id uuid NOT NULL,
+  due_date timestamp without time zone,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  tags text[],
+  time_estimate integer,
+  time_spent integer,
+  time_started timestamp without time zone,
+  time_tracking jsonb,
+  hourly_rate numeric,
+  cost numeric,
+  CONSTRAINT tasks_pkey PRIMARY KEY (id)
+);
+        `);
+      }
+      return;
+    }
+    
+    console.log('Tasks table exists and is accessible');
+    console.log('Sample tasks data:', tasksData);
+    
+    // Check if required columns exist by trying to select them
+    const requiredColumns = [
+      'id', 'title', 'description', 'status', 'priority', 
+      'assignee_id', 'created_by_id', 'project_id', 'due_date',
+      'created_at', 'updated_at', 'tags', 'time_estimate', 
+      'time_spent', 'time_started', 'time_tracking', 'hourly_rate', 'cost'
+    ];
+    
+    for (const column of requiredColumns) {
+      try {
+        const { error: columnError } = await supabase
+          .from('tasks')
+          .select(column)
+          .limit(1);
+        
+        if (columnError) {
+          console.error(`Column ${column} is missing from tasks table`);
+          console.error(`SQL to add column ${column}:`);
+          
+          if (column === 'time_tracking') {
+            console.error(`ALTER TABLE public.tasks ADD COLUMN time_tracking jsonb;`);
+          } else if (column === 'time_spent') {
+            console.error(`ALTER TABLE public.tasks ADD COLUMN time_spent integer;`);
+          } else if (column === 'time_started') {
+            console.error(`ALTER TABLE public.tasks ADD COLUMN time_started timestamp without time zone;`);
+          } else if (column === 'time_estimate') {
+            console.error(`ALTER TABLE public.tasks ADD COLUMN time_estimate integer;`);
+          } else if (column === 'hourly_rate') {
+            console.error(`ALTER TABLE public.tasks ADD COLUMN hourly_rate numeric;`);
+          } else if (column === 'cost') {
+            console.error(`ALTER TABLE public.tasks ADD COLUMN cost numeric;`);
+          } else if (column === 'tags') {
+            console.error(`ALTER TABLE public.tasks ADD COLUMN tags text[];`);
+          }
+        } else {
+          console.log(`Column ${column} exists in tasks table`);
+        }
+      } catch (error) {
+        console.error(`Error checking column ${column}:`, error);
+      }
+    }
+    
+    console.log('=== END TASKS TABLE CHECK ===');
+  } catch (error) {
+    console.error('Error in checkAndFixTasksTable:', error);
+  }
+}; 

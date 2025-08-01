@@ -24,28 +24,33 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
   const [editingSession, setEditingSession] = useState<TimeTrackingRecord | null>(null);
   const [editDescription, setEditDescription] = useState("");
   const [editDuration, setEditDuration] = useState("");
+  const [isReset, setIsReset] = useState(false);
 
   // Initialize from task
   useEffect(() => {
-    // Clean up incomplete sessions (without endTime) on component mount
-    if (task?.timeTracking && task.timeTracking.length > 0) {
-      const incompleteSessions = task.timeTracking.filter(session => !session.endTime);
-      if (incompleteSessions.length > 0) {
-        console.log('Found incomplete sessions, cleaning up:', incompleteSessions);
-        // Remove incomplete sessions
-        const cleanTimeTracking = task.timeTracking.filter(session => session.endTime);
-        updateTask(taskId, {
-          timeTracking: cleanTimeTracking
-        });
-      }
+    console.log('=== TIMER INIT EFFECT TRIGGERED ===');
+    console.log('task?.timeTracking changed:', task?.timeTracking);
+    console.log('isReset:', isReset);
+    
+    // Don't update elapsedSeconds if reset was just performed
+    if (isReset) {
+      console.log('Skipping elapsedSeconds update due to reset');
+      setIsReset(false);
+      return;
     }
     
     // Calculate total time from timeTracking history (only completed sessions)
     const totalTimeFromHistory = task?.timeTracking?.reduce((total, record) => {
+      console.log('Processing session:', record);
+      console.log('Session has endTime:', !!record.endTime);
+      console.log('Session duration:', record.duration);
       // Only count sessions that have endTime (completed sessions)
       if (record.endTime) {
-        return total + (record.duration || 0);
+        const newTotal = total + (record.duration || 0);
+        console.log('Adding to total:', record.duration, 'New total:', newTotal);
+        return newTotal;
       }
+      console.log('Skipping session without endTime');
       return total;
     }, 0) || 0;
     
@@ -62,29 +67,37 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     console.log('Timer init - setting elapsedSeconds to:', Math.floor(totalTimeFromHistory * 60));
     
     setElapsedSeconds(Math.floor(totalTimeFromHistory * 60)); // Convert minutes to seconds
-  }, [task?.timeTracking, taskId, updateTask]);
+  }, [task?.timeTracking, taskId, isReset]);
 
-  // Simple timer effect
+  // Timer effect - updates timer when running and sets total time when stopped
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     if (isRunning && sessionStartTime) {
+      // Timer is running - update every second
       interval = setInterval(() => {
         const now = Date.now();
         const sessionElapsed = Math.floor((now - sessionStartTime) / 1000);
         
-        // Calculate total time from timeTracking history (only completed sessions)
-        const totalTimeFromHistory = task?.timeTracking?.reduce((total, record) => {
-          // Only count sessions that have endTime (completed sessions)
-          if (record.endTime) {
-            return total + (record.duration || 0);
-          }
-          return total;
-        }, 0) || 0;
+        console.log('=== TIMER UPDATE ===');
+        console.log('sessionStartTime:', sessionStartTime);
+        console.log('now:', now);
+        console.log('sessionElapsed:', sessionElapsed);
         
-        const totalElapsed = Math.floor(totalTimeFromHistory * 60) + sessionElapsed;
-        setElapsedSeconds(totalElapsed);
+        // When timer is running, show only current session time
+        setElapsedSeconds(sessionElapsed);
       }, 1000);
+    } else {
+      // Timer is not running - set total time from history
+      const totalTimeFromHistory = task?.timeTracking?.reduce((total, record) => {
+        // Only count sessions that have endTime (completed sessions)
+        if (record.endTime) {
+          return total + (record.duration || 0);
+        }
+        return total;
+      }, 0) || 0;
+      
+      setElapsedSeconds(Math.floor(totalTimeFromHistory * 60));
     }
 
     return () => {
@@ -97,9 +110,13 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
   const startTimer = useCallback(async () => {
     if (!task || !currentUser) return;
 
+    console.log("=== START TIMER DEBUG ===");
     console.log("Starting timer for task:", taskId);
     console.log("Current task:", task);
     console.log("Current user:", currentUser);
+    console.log("Current elapsedSeconds:", elapsedSeconds);
+    console.log("Current isRunning:", isRunning);
+    console.log("Current sessionStartTime:", sessionStartTime);
     
     const now = Date.now();
     setIsRunning(true);
@@ -157,7 +174,7 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
 
     // Find and update the current session
     const currentSession = task.timeTracking?.find(session => 
-      !session.endTime && session.startTime === new Date(sessionStartTime).toISOString()
+      !session.endTime
     );
 
     if (currentSession) {
@@ -194,6 +211,11 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     const now = Date.now();
     const sessionElapsed = (now - sessionStartTime) / (1000 * 60); // Convert to minutes
     
+    console.log('=== STOP TIMER DEBUG ===');
+    console.log('sessionElapsed (minutes):', sessionElapsed);
+    console.log('sessionElapsed (seconds):', sessionElapsed * 60);
+    console.log('isReset flag:', isReset);
+    
     // Calculate total time from timeTracking history (only completed sessions)
     const totalTimeFromHistory = task.timeTracking?.reduce((total, record) => {
       // Only count sessions that have endTime (completed sessions)
@@ -202,18 +224,25 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
       }
       return total;
     }, 0) || 0;
-    const totalTime = totalTimeFromHistory + sessionElapsed;
+    
+    // If reset was performed, don't add previous history
+    const totalTime = isReset ? sessionElapsed : totalTimeFromHistory + sessionElapsed;
+    console.log('totalTimeFromHistory:', totalTimeFromHistory);
+    console.log('totalTime (final):', totalTime);
 
     setIsRunning(false);
     setSessionStartTime(null);
-    setElapsedSeconds(0); // Reset display to 00:00
+    setIsReset(false); // Reset the flag after stopping
 
     // Find and update the current session
     const currentSession = task.timeTracking?.find(session => 
-      !session.endTime && session.startTime === new Date(sessionStartTime).toISOString()
+      !session.endTime
     );
 
     if (currentSession) {
+      console.log('Updating session with duration:', sessionElapsed, 'minutes');
+      console.log('Duration in seconds:', sessionElapsed * 60);
+      console.log('Formatted duration:', formatDuration(sessionElapsed * 60));
       const updatedSession: TimeTrackingRecord = {
         ...currentSession,
         endTime: new Date(now).toISOString(),
@@ -327,14 +356,26 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
     console.log("=== END DELETE SESSION DEBUG ===");
   }, [task, taskId, updateTask]);
 
-  // Reset time tracking (for testing)
+  // Reset current timer (doesn't affect history)
   const resetTimeTracking = useCallback(async () => {
-    console.log('Resetting time tracking for task:', taskId);
-    await updateTask(taskId, {
-      timeTracking: [],
-      timeSpent: 0
-    });
-  }, [taskId, updateTask]);
+    console.log('Resetting current timer for task:', taskId);
+    setIsRunning(false);
+    setSessionStartTime(null);
+    setElapsedSeconds(0);
+    setIsReset(true); // Set reset flag
+    
+    // Clear any incomplete sessions
+    if (task?.timeTracking) {
+      const incompleteSessions = task.timeTracking.filter(session => !session.endTime);
+      if (incompleteSessions.length > 0) {
+        console.log('Clearing incomplete sessions:', incompleteSessions);
+        const cleanTimeTracking = task.timeTracking.filter(session => session.endTime);
+        await updateTask(taskId, {
+          timeTracking: cleanTimeTracking
+        });
+      }
+    }
+  }, [taskId, task?.timeTracking, updateTask]);
 
   // Open edit dialog
   const openEditDialog = useCallback((session: TimeTrackingRecord) => {
@@ -408,29 +449,38 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
 
         {task.timeEstimate && (
           <div className="flex justify-between items-center text-sm text-muted-foreground">
-            <span>Estimated: {formatDuration(task.timeEstimate)}</span>
+            <span>Estimated: {formatDuration(task.timeEstimate * 60)}</span>
             <span>
-              Remaining: {formatDuration(Math.max(0, task.timeEstimate - (elapsedSeconds / 60)))}
+              Remaining: {formatDuration(Math.max(0, (task.timeEstimate * 60) - elapsedSeconds))}
             </span>
           </div>
         )}
 
         {/* Time Tracking History */}
-        {task.timeTracking && task.timeTracking.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium text-muted-foreground mb-2">Session History</h4>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
-              {task.timeTracking
-                .filter(session => session.endTime) // Only show completed sessions
-                .sort((a, b) => new Date(b.endTime!).getTime() - new Date(a.endTime!).getTime()) // Sort by newest first
-                .map((session) => (
+        {(() => {
+          console.log('=== RENDERING SESSION HISTORY ===');
+          console.log('task.timeTracking:', task.timeTracking);
+          console.log('task.timeTracking.length:', task.timeTracking?.length);
+          console.log('task.timeTracking && task.timeTracking.length > 0:', task.timeTracking && task.timeTracking.length > 0);
+          
+          const completedSessions = task.timeTracking?.filter(session => session.endTime) || [];
+          console.log('completedSessions:', completedSessions);
+          console.log('completedSessions.length:', completedSessions.length);
+          
+          return task.timeTracking && task.timeTracking.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Session History</h4>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {completedSessions
+                  .sort((a, b) => new Date(b.endTime!).getTime() - new Date(a.endTime!).getTime()) // Sort by newest first
+                  .map((session) => (
                   <div key={session.id} className="flex justify-between items-center text-xs bg-muted/50 p-2 rounded group">
                     <div className="flex-1">
                       <div className="font-medium">
                         {new Date(session.startTime).toLocaleDateString()} {new Date(session.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </div>
                       <div className="text-muted-foreground">
-                        Duration: {formatDuration(session.duration || 0)} ({session.duration?.toFixed(2) || '0.00'} min)
+                        Duration: {formatDuration((session.duration || 0) * 60)} (raw: {session.duration} min, seconds: {(session.duration || 0) * 60}, formatted: {formatDuration((session.duration || 0) * 60)})
                       </div>
                       {session.description && (
                         <div className="text-muted-foreground text-xs mt-1">{session.description}</div>
@@ -458,7 +508,8 @@ export function TaskTimer({ taskId }: TaskTimerProps) {
                 ))}
             </div>
           </div>
-        )}
+        );
+        })()}
 
         {/* Edit Session Dialog */}
         <Dialog open={!!editingSession} onOpenChange={() => setEditingSession(null)}>
